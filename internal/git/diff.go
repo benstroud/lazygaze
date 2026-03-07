@@ -96,11 +96,34 @@ func CommitCount(ctx context.Context) (int, error) {
 	return strconv.Atoi(strings.TrimSpace(result))
 }
 
-// DiffRoot returns the diff output for the initial/root commit (HEAD).
-// It runs "git show HEAD" to retrieve the diff and returns an error if
-// no diff output exists (e.g., for an initial commit with no changes).
+// DiffHEAD returns the diff of all uncommitted changes (staged + unstaged) vs HEAD.
+func DiffHEAD(ctx context.Context) (string, error) {
+	result, err := runGitCmd(ctx, "diff", "HEAD")
+	if err != nil {
+		return "", err
+	}
+	if strings.TrimSpace(result) == "" {
+		return "", fmt.Errorf("%w for HEAD. No uncommitted changes.", ErrNoDiffOutput)
+	}
+	return result, nil
+}
+
+// DiffRoot returns the diff output for the initial/root commit of the repo.
+// It finds the root commit (earliest ancestor of HEAD) and runs "git show" on it.
 func DiffRoot(ctx context.Context) (string, error) {
-	result, err := runGitCmd(ctx, "show", "HEAD")
+	hash, err := runGitCmd(ctx, "rev-list", "--max-parents=0", "HEAD")
+	if err != nil {
+		return "", err
+	}
+	hash = strings.TrimSpace(hash)
+	if hash == "" {
+		return "", fmt.Errorf("%w for initial commit", ErrNoDiffOutput)
+	}
+	// If multiple roots exist, use the first one.
+	if i := strings.IndexByte(hash, '\n'); i >= 0 {
+		hash = hash[:i]
+	}
+	result, err := runGitCmd(ctx, "show", hash)
 	if err != nil {
 		return "", err
 	}

@@ -101,8 +101,8 @@ lazyreview --model opus HEAD~5..HEAD
 | `:` | Enter a git range (e.g. `HEAD~3..HEAD`, `main..feature`) |
 | `~` | Shorthand: enter `n` to review `HEAD~n..HEAD` |
 | `^` | Review last commit (`HEAD^..HEAD`) |
-| `s` | Review staged changes |
-| `0` | Review initial commit |
+| `S` | Review staged changes |
+| `D` | Review uncommitted/dirty changes |
 | `r` | Refresh / re-run current diff |
 
 ### Review

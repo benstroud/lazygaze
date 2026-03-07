@@ -95,16 +95,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.tildeInput.SetValue("")
 			m.tildeInput.Focus()
 			return m, textinput.Blink
-		case "s":
+		case "S":
 			var ctx context.Context
 			m, ctx = resetForNewStream(m)
 			m.diffSrc = diffSourceStaged
 			return m, fetchDiffStagedCmd(ctx, m.diffFetchGen)
-		case "0":
+		case "D":
 			var ctx context.Context
 			m, ctx = resetForNewStream(m)
-			m.diffSrc = diffSourceRoot
-			return m, fetchDiffRootCmd(ctx, m.diffFetchGen)
+			m.diffSrc = diffSourceHEAD
+			return m, fetchDiffHEADCmd(ctx, m.diffFetchGen)
 		case "^":
 			m.gitRange = "HEAD^..HEAD"
 			var ctx context.Context
@@ -123,6 +123,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, fetchDiffStagedCmd(ctx, m.diffFetchGen)
 			case diffSourceRoot:
 				return m, fetchDiffRootCmd(ctx, m.diffFetchGen)
+			case diffSourceHEAD:
+				return m, fetchDiffHEADCmd(ctx, m.diffFetchGen)
 			case diffSourceRange:
 				return m, fetchDiffCmd(ctx, m.gitRange, m.diffFetchGen)
 			}
