@@ -1,0 +1,6 @@
+version: 1
+env:
+  - CGO_ENABLED=0
+goos: linux
+goarch: arm64
+binary: lazyreview-linux-arm64
