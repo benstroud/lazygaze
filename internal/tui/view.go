@@ -18,7 +18,7 @@ func (m Model) View() string {
 	}
 	header := headerStyle.Render(headerText)
 	if m.persona != nil {
-		header += headerStyle.Render(" as ") + personaNameStyle.Render(m.persona.Name)
+		header += headerStyle.Render("as ") + personaNameStyle.Render(m.persona.Name)
 	}
 
 	// Footer

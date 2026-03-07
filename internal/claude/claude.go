@@ -53,16 +53,17 @@ func buildEnv() []string {
 	return env
 }
 
-// baseArgs returns a slice of command-line arguments for invoking the Claude CLI.
-// It configures the session with the provided prompt, model, and disables browser
-// and slash command features.
+// baseArgs returns a slice of command-line arguments for invoking the Claude
+// CLI. It configures the session with the provided prompt, model, and disables
+// browser and slash command features. Tools are disabled; consider enabling
+// read-only tools (Glob, Grep, Read) if LSP code intelligence requires them.
 func baseArgs(prompt, model string) []string {
 	return []string{
-		"-p", prompt, // Set the prompt
-		"--tools", "", // Disable tools
-		"--no-chrome",              // Disable browser features
-		"--disable-slash-commands", // Disable slash commands
-		"--model", model,           // Set the model
+		"-p", prompt,
+		"--tools", "",
+		"--no-chrome", // Disable browser features
+		"--disable-slash-commands",
+		"--model", model,
 	}
 }
 
