@@ -48,7 +48,7 @@ const (
 	diffSourceHEAD
 )
 
-const footerHints = "[tab] switch pane | [j/k] scroll | [:] git range | [D] uncommitted | [^] last commit | [~] HEAD~n | [S] staged | [/] prompt | [m] model | [c] copy | [L] library | [P] persona | [r] refresh | [q] quit"
+const footerHints = "[tab] switch pane | [j/k] scroll | [:] git range | [S] staged | [D] uncommitted | [^] last commit | [~] HEAD~n | [/] prompt | [m] model | [c] copy | [L] library | [P] persona | [r] refresh | [q] quit"
 
 // Message types with generation tracking for stream messages
 type singleCommitRepoMsg struct{}
@@ -351,11 +351,43 @@ func (m *Model) renderMarkdown(raw string) string {
 	return strings.TrimRight(rendered, "\n")
 }
 
+func (m Model) footerContent() string {
+	switch m.mode {
+	case modeGitRange:
+		return "git range: " + m.gitRangeInput.View()
+	case modePrompt:
+		return "prompt: " + m.promptInput.View()
+	case modeTilde:
+		return "HEAD~n..HEAD, n = " + m.tildeInput.View()
+	case modeLibrary, modePersona:
+		return "[j/k] navigate | [enter] select | [esc] cancel"
+	case modeConfirmLargeDiff:
+		return "[enter] continue review | [esc] cancel"
+	default:
+		status := ""
+		if m.copied {
+			status = "copied!"
+		} else if m.streaming {
+			status = streamingStyle.Render(spinnerFrames[m.spinnerIndex] + " reviewing...")
+		} else if m.done {
+			status = "done"
+		} else if m.err != nil {
+			status = "error"
+		} else if m.statusMsg != "" {
+			status = m.statusMsg
+		}
+		if status != "" {
+			return footerHints + " | " + status
+		}
+		return footerHints
+	}
+}
+
 func (m *Model) footerLines() int {
 	if m.width <= 0 {
 		return 1
 	}
-	rendered := footerStyle.Width(m.width).Render(footerHints)
+	rendered := footerStyle.Width(m.width).Render(m.footerContent())
 	return lipgloss.Height(rendered)
 }
 

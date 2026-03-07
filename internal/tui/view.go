@@ -21,12 +21,22 @@ func (m Model) View() string {
 		header += headerStyle.Render(" as ") + personaNameStyle.Render(m.persona.Name)
 	}
 
-	// Pane dimensions
+	// Footer
+	footer := footerStyle.Width(m.width).Render(m.footerContent())
+
+	// Pane dimensions — derived from actual header/footer heights
 	borderWidth := 2
+	borderHeight := 2
 	paneWidth := (m.width / 2) - borderWidth
 	if paneWidth < 1 {
 		paneWidth = 1
 	}
+	paneHeight := m.height - lipgloss.Height(header) - lipgloss.Height(footer) - borderHeight
+	if paneHeight < 1 {
+		paneHeight = 1
+	}
+	m.diffViewport.Height = paneHeight
+	m.reviewViewport.Height = paneHeight
 
 	// Diff pane
 	diffStyle := inactiveBorder
@@ -37,7 +47,6 @@ func (m Model) View() string {
 	if m.diffContent == "" {
 		diffView = placeholderStyle.Render("Press : to set a git range")
 	}
-	paneHeight := m.diffViewport.Height
 	diffPane := diffStyle.Width(paneWidth).Height(paneHeight).Render(diffView)
 
 	// Review pane
@@ -55,42 +64,6 @@ func (m Model) View() string {
 
 	// Join panes
 	panes := lipgloss.JoinHorizontal(lipgloss.Top, diffPane, reviewPane)
-
-	// Footer
-	var footer string
-	wideFooter := footerStyle.Width(m.width)
-	switch m.mode {
-	case modeGitRange:
-		footer = wideFooter.Render("git range: " + m.gitRangeInput.View())
-	case modePrompt:
-		footer = wideFooter.Render("prompt: " + m.promptInput.View())
-	case modeTilde:
-		footer = wideFooter.Render("HEAD~n..HEAD, n = " + m.tildeInput.View())
-	case modeLibrary:
-		footer = wideFooter.Render("[j/k] navigate | [enter] select | [esc] cancel")
-	case modePersona:
-		footer = wideFooter.Render("[j/k] navigate | [enter] select | [esc] cancel")
-	case modeConfirmLargeDiff:
-		footer = wideFooter.Render("[enter] continue review | [esc] cancel")
-	default:
-		status := ""
-		if m.copied {
-			status = "copied!"
-		} else if m.streaming {
-			status = streamingStyle.Render(spinnerFrames[m.spinnerIndex] + " reviewing...")
-		} else if m.done {
-			status = "done"
-		} else if m.err != nil {
-			status = "error"
-		} else if m.statusMsg != "" {
-			status = m.statusMsg
-		}
-		if status != "" {
-			footer = wideFooter.Render(footerHints + " | " + status)
-		} else {
-			footer = wideFooter.Render(footerHints)
-		}
-	}
 
 	return lipgloss.JoinVertical(lipgloss.Left, header, panes, footer)
 }
