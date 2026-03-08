@@ -11,7 +11,9 @@ import (
 	"github.com/benstroud/lazyreview/internal/claude"
 	"github.com/benstroud/lazyreview/internal/cli"
 	"github.com/benstroud/lazyreview/internal/config"
+	"github.com/benstroud/lazyreview/internal/copilot"
 	"github.com/benstroud/lazyreview/internal/git"
+	"github.com/benstroud/lazyreview/internal/harness"
 	"github.com/benstroud/lazyreview/internal/tui"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -54,8 +56,41 @@ func run(cmd *cobra.Command, args []string) error {
 	if err := git.CheckBinary(); err != nil {
 		return err
 	}
-	if err := claude.CheckBinary(); err != nil {
-		return err
+
+	// Detect available harnesses.
+	claudeAvail := claude.CheckBinary() == nil
+	copilotAvail := copilot.CheckBinary() == nil
+	if !claudeAvail && !copilotAvail {
+		return fmt.Errorf("no harness found: install claude or copilot CLI")
+	}
+
+	prof := config.Load()
+	if !cmd.Flags().Changed("model") && prof.ModelName != "" {
+		model = prof.ModelName
+	}
+
+	var availableHarnesses []harness.Harness
+	if claudeAvail {
+		availableHarnesses = append(availableHarnesses, claude.New(model))
+	}
+	if copilotAvail {
+		availableHarnesses = append(availableHarnesses, copilot.New())
+	}
+
+	// Select active harness from profile, falling back to first available.
+	var activeHarness harness.Harness
+	for _, h := range availableHarnesses {
+		if h.Name() == prof.HarnessName {
+			activeHarness = h
+			break
+		}
+	}
+	if activeHarness == nil {
+		activeHarness = availableHarnesses[0]
+	}
+
+	if claudeAvail && copilotAvail && prof.HarnessName == "" {
+		fmt.Fprintln(os.Stderr, "Info: both claude and copilot detected. Defaulting to claude. Press 'H' in TUI to switch harness.")
 	}
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
@@ -66,18 +101,14 @@ func run(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("git-range is required in CLI mode")
 		}
 		fullPrompt := claude.BuildPrompt(claude.DefaultSystemPrompt, prompt)
-		return cli.Run(ctx, gitRange, fullPrompt, model)
+		return cli.Run(ctx, gitRange, fullPrompt, activeHarness)
 	}
 
-	prof := config.Load()
 	persona := tui.ResolveByName(prof.PersonaName)
-	if !cmd.Flags().Changed("model") && prof.ModelName != "" {
-		model = prof.ModelName
-	}
 
-	// TUI mode with no args: launch empty
+	// TUI mode with no args: launch empty.
 	if gitRange == "" {
-		m := tui.NewEmpty(model, persona)
+		m := tui.NewEmpty(model, persona, activeHarness, availableHarnesses)
 		p := tea.NewProgram(m, tea.WithAltScreen())
 		if _, err := p.Run(); err != nil {
 			return err
@@ -85,7 +116,7 @@ func run(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	// TUI mode with args
+	// TUI mode with args.
 	diffText, err := git.Diff(ctx, gitRange)
 	if err != nil {
 		return err
@@ -107,13 +138,13 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 	fullPrompt := claude.BuildPrompt(sys, prompt)
 	streamCtx, streamCancel := context.WithCancel(ctx)
-	ch, err := claude.RunStreaming(streamCtx, fullPrompt, diffText, model)
+	ch, err := activeHarness.RunStreaming(streamCtx, fullPrompt, diffText)
 	if err != nil {
 		streamCancel()
-		return fmt.Errorf("starting claude: %w", err)
+		return fmt.Errorf("starting %s: %w", activeHarness.Name(), err)
 	}
 
-	m := tui.New(diffText, gitRange, prompt, ch, model, streamCancel, persona)
+	m := tui.New(diffText, gitRange, prompt, ch, model, streamCancel, persona, activeHarness, availableHarnesses)
 	p := tea.NewProgram(m, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		return err

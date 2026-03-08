@@ -10,6 +10,7 @@ import (
 type Profile struct {
 	PersonaName string `json:"persona_name"`
 	ModelName   string `json:"model_name,omitempty"`
+	HarnessName string `json:"harness_name,omitempty"`
 }
 
 func profilePath() (string, error) {

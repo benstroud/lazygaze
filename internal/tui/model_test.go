@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/benstroud/lazyreview/internal/claude"
+	"github.com/benstroud/lazyreview/internal/harness"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 func TestResetForNewStream(t *testing.T) {
 	cancelled := false
-	m := NewEmpty("sonnet", nil)
+	m := NewEmpty("sonnet", nil, claude.New("sonnet"), []harness.Harness{claude.New("sonnet")})
 	m.cancelStream = func() { cancelled = true }
 	m.err = fmt.Errorf("old error")
 	m.done = true
@@ -60,7 +62,7 @@ func TestResetForNewStream(t *testing.T) {
 }
 
 func TestHandleTildeInput_ValidN(t *testing.T) {
-	m := NewEmpty("sonnet", nil)
+	m := NewEmpty("sonnet", nil, claude.New("sonnet"), []harness.Harness{claude.New("sonnet")})
 	m.mode = modeTilde
 	m.tildeInput.SetValue("3")
 
@@ -76,7 +78,7 @@ func TestHandleTildeInput_ValidN(t *testing.T) {
 }
 
 func TestHandleTildeInput_InvalidN(t *testing.T) {
-	m := NewEmpty("sonnet", nil)
+	m := NewEmpty("sonnet", nil, claude.New("sonnet"), []harness.Harness{claude.New("sonnet")})
 	m.mode = modeTilde
 	m.tildeInput.SetValue("abc")
 
@@ -92,7 +94,7 @@ func TestHandleTildeInput_InvalidN(t *testing.T) {
 }
 
 func TestHandleTildeInput_ZeroN(t *testing.T) {
-	m := NewEmpty("sonnet", nil)
+	m := NewEmpty("sonnet", nil, claude.New("sonnet"), []harness.Harness{claude.New("sonnet")})
 	m.mode = modeTilde
 	m.tildeInput.SetValue("0")
 
@@ -105,7 +107,7 @@ func TestHandleTildeInput_ZeroN(t *testing.T) {
 }
 
 func TestHandleTildeInput_NegativeN(t *testing.T) {
-	m := NewEmpty("sonnet", nil)
+	m := NewEmpty("sonnet", nil, claude.New("sonnet"), []harness.Harness{claude.New("sonnet")})
 	m.mode = modeTilde
 	m.tildeInput.SetValue("-1")
 
@@ -118,7 +120,7 @@ func TestHandleTildeInput_NegativeN(t *testing.T) {
 }
 
 func TestHandleTildeInput_EmptyInput(t *testing.T) {
-	m := NewEmpty("sonnet", nil)
+	m := NewEmpty("sonnet", nil, claude.New("sonnet"), []harness.Harness{claude.New("sonnet")})
 	m.mode = modeTilde
 	m.tildeInput.SetValue("")
 
@@ -134,7 +136,7 @@ func TestHandleTildeInput_EmptyInput(t *testing.T) {
 }
 
 func TestHandleTildeInput_Escape(t *testing.T) {
-	m := NewEmpty("sonnet", nil)
+	m := NewEmpty("sonnet", nil, claude.New("sonnet"), []harness.Harness{claude.New("sonnet")})
 	m.mode = modeTilde
 
 	result, _ := m.handleTildeInput(tea.KeyMsg{Type: tea.KeyEscape})
@@ -146,12 +148,12 @@ func TestHandleTildeInput_Escape(t *testing.T) {
 }
 
 func TestStagedKeybinding(t *testing.T) {
-	m := NewEmpty("sonnet", nil)
+	m := NewEmpty("sonnet", nil, claude.New("sonnet"), []harness.Harness{claude.New("sonnet")})
 	// Set up a pre-existing stream cancel to verify it gets called.
 	streamCancelled := false
 	m.cancelStream = func() { streamCancelled = true }
 
-	result, cmd := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
+	result, cmd := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'S'}})
 	model := result.(Model)
 
 	if model.diffSrc != diffSourceStaged {
@@ -172,7 +174,7 @@ func TestStagedKeybinding(t *testing.T) {
 }
 
 func TestNewEmpty_Defaults(t *testing.T) {
-	m := NewEmpty("opus", nil)
+	m := NewEmpty("opus", nil, claude.New("opus"), []harness.Harness{claude.New("opus")})
 	if m.modelName != "opus" {
 		t.Errorf("modelName = %q, want %q", m.modelName, "opus")
 	}

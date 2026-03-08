@@ -59,7 +59,7 @@ func (m Model) handlePromptInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.prompt = val
 		m.promptNoPersona = false
 		m = resetForNewReview(m)
-		return m, startStreamCmd(m.buildFullPrompt(), m.diffContent, m.modelName)
+		return m, startStreamCmd(m.activeHarness, m.buildFullPrompt(), m.diffContent)
 	case "esc":
 		m.mode = modeNormal
 		m.promptInput.Blur()
@@ -124,7 +124,7 @@ func (m Model) handleLibraryInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.promptNoPersona = entry.NoPersona
 		m.mode = modeNormal
 		m = resetForNewReview(m)
-		return m, startStreamCmd(m.buildFullPrompt(), m.diffContent, m.modelName)
+		return m, startStreamCmd(m.activeHarness, m.buildFullPrompt(), m.diffContent)
 	case "esc":
 		m.mode = modeNormal
 		m.reviewViewport.SetContent(m.renderMarkdown(m.reviewContent.String()))
@@ -206,7 +206,7 @@ func (m Model) handlePersonaInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m, saveCmd
 		}
 		m = resetForNewReview(m)
-		return m, tea.Batch(saveCmd, startStreamCmd(m.buildFullPrompt(), m.diffContent, m.modelName))
+		return m, tea.Batch(saveCmd, startStreamCmd(m.activeHarness, m.buildFullPrompt(), m.diffContent))
 	case "esc":
 		m.mode = modeNormal
 		m.reviewViewport.SetContent(m.renderMarkdown(m.reviewContent.String()))
@@ -275,7 +275,7 @@ func (m Model) handleConfirmLargeDiff(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.pendingDiff = nil
 		m.mode = modeNormal
 		m = resetForNewReview(m)
-		return m, startStreamCmd(m.buildFullPrompt(), m.diffContent, m.modelName)
+		return m, startStreamCmd(m.activeHarness, m.buildFullPrompt(), m.diffContent)
 	case "esc":
 		m.pendingDiff = nil
 		m.mode = modeNormal
@@ -289,4 +289,51 @@ func (m Model) handleConfirmLargeDiff(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	default:
 		return m, nil
 	}
+}
+
+// handleHarnessInput processes keyboard input when the TUI is in harness selection mode.
+func (m Model) handleHarnessInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "enter":
+		m.activeHarness = m.availableHarnesses[m.harnessIndex].WithModel(m.modelName)
+		m.mode = modeNormal
+		m.reviewViewport.SetContent(m.renderMarkdown(m.reviewContent.String()))
+		return m, saveProfileCmd(m)
+	case "esc":
+		m.mode = modeNormal
+		m.reviewViewport.SetContent(m.renderMarkdown(m.reviewContent.String()))
+		return m, nil
+	case "j", "down":
+		if m.harnessIndex < len(m.availableHarnesses)-1 {
+			m.harnessIndex++
+		}
+		m.reviewViewport.SetContent(m.renderHarnessList())
+		return m, nil
+	case "k", "up":
+		if m.harnessIndex > 0 {
+			m.harnessIndex--
+		}
+		m.reviewViewport.SetContent(m.renderHarnessList())
+		return m, nil
+	default:
+		return m, nil
+	}
+}
+
+// renderHarnessList renders the harness selection list view.
+func (m Model) renderHarnessList() string {
+	var b strings.Builder
+	b.WriteString(lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("229")).Render("Select Harness"))
+	b.WriteString("\n")
+	b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("240")).Render("j/k navigate | Enter select | Esc cancel"))
+	b.WriteString("\n\n")
+	for i, h := range m.availableHarnesses {
+		if i == m.harnessIndex {
+			b.WriteString(librarySelectedStyle.Render("> " + h.Name()))
+		} else {
+			b.WriteString(libraryItemStyle.Render("  " + h.Name()))
+		}
+		b.WriteString("\n")
+	}
+	return b.String()
 }

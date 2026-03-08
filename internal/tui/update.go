@@ -40,6 +40,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.mode == modeConfirmLargeDiff {
 			return m.handleConfirmLargeDiff(msg)
 		}
+		if m.mode == modeHarness {
+			return m.handleHarnessInput(msg)
+		}
 
 		// Normal mode keys
 		switch msg.String() {
@@ -75,11 +78,28 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			for i, name := range supportedModels {
 				if name == m.modelName {
 					m.modelName = supportedModels[(i+1)%len(supportedModels)]
+					m.activeHarness = m.activeHarness.WithModel(m.modelName)
 					return m, saveProfileCmd(m)
 				}
 			}
 			m.modelName = supportedModels[0]
+			m.activeHarness = m.activeHarness.WithModel(m.modelName)
 			return m, saveProfileCmd(m)
+		case "H":
+			if len(m.availableHarnesses) <= 1 {
+				m.statusMsg = "Only one harness available"
+				return m, nil
+			}
+			m.mode = modeHarness
+			for i, h := range m.availableHarnesses {
+				if h.Name() == m.activeHarness.Name() {
+					m.harnessIndex = i
+					break
+				}
+			}
+			m.reviewViewport.SetContent(m.renderHarnessList())
+			m.reviewViewport.GotoTop()
+			return m, nil
 		case "c":
 			var content string
 			if m.focusedPane == 0 {
@@ -217,7 +237,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.err = nil
 		m.done = false
 		m.autoScroll = true
-		return m, startStreamCmd(m.buildFullPrompt(), m.diffContent, m.modelName)
+		return m, startStreamCmd(m.activeHarness, m.buildFullPrompt(), m.diffContent)
 
 	case diffErrMsg:
 		if msg.gen != m.diffFetchGen {

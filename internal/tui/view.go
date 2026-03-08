@@ -14,9 +14,14 @@ func (m Model) View() string {
 	}
 
 	// Header
-	headerText := fmt.Sprintf("lazyreview [%s]", m.modelName)
+	harnessName := m.activeHarness.Name()
+	harnessLabel := harnessName + ":" + m.modelName
+	if harnessName != "claude" {
+		harnessLabel = harnessName
+	}
+	headerText := fmt.Sprintf("lazyreview [%s]", harnessLabel)
 	if m.diffLabel != "" {
-		headerText = fmt.Sprintf("lazyreview: %s | %s [%s]", m.diffLabel, m.prompt, m.modelName)
+		headerText = fmt.Sprintf("lazyreview: %s | %s [%s]", m.diffLabel, m.prompt, harnessLabel)
 	}
 	header := headerStyle.Render(headerText)
 	if m.persona != nil {
@@ -80,7 +85,9 @@ func (m Model) View() string {
 	if m.err != nil {
 		reviewView = errorStyle.Render(fmt.Sprintf("Error: %v", m.err))
 		reviewShowPct = false
-	} else if m.reviewContent.Len() == 0 && !m.streaming && m.mode != modeConfirmLargeDiff {
+	} else if m.reviewContent.Len() == 0 && !m.streaming &&
+		m.mode != modeConfirmLargeDiff && m.mode != modeLibrary &&
+		m.mode != modePersona && m.mode != modeHarness {
 		reviewView = placeholderStyle.Render("The LLM output will appear here")
 		reviewShowPct = false
 	}

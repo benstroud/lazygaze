@@ -10,6 +10,8 @@ import (
 	"github.com/benstroud/lazyreview/internal/claude"
 	"github.com/benstroud/lazyreview/internal/config"
 	"github.com/benstroud/lazyreview/internal/git"
+	"github.com/benstroud/lazyreview/internal/harness"
+	"github.com/benstroud/lazyreview/internal/stream"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbles/viewport"
@@ -36,6 +38,7 @@ const (
 	modeLibrary
 	modePersona
 	modeConfirmLargeDiff
+	modeHarness
 )
 
 type diffSource int
@@ -48,7 +51,7 @@ const (
 	diffSourceHEAD
 )
 
-const footerHintsBase = "[tab] switch pane | [j/k] scroll | %s | [:] git range | [S] staged | [D] uncommitted | [^] last commit | [~] HEAD~n | [/] prompt | [m] model | [c] copy | [L] library | [P] persona | [r] refresh | [q] quit"
+const footerHintsBase = "[tab] switch pane | [j/k] scroll | %s | [:] git range | [S] staged | [D] uncommitted | [^] last commit | [~] HEAD~n | [/] prompt | [m] model | [H] harness | [c] copy | [L] library | [P] persona | [r] refresh | [q] quit"
 
 // Message types with generation tracking for stream messages
 type singleCommitRepoMsg struct{}
@@ -74,7 +77,7 @@ type diffErrMsg struct {
 }
 
 type streamStartedMsg struct {
-	ch     <-chan claude.StreamEvent
+	ch     <-chan stream.Event
 	cancel context.CancelFunc
 }
 type streamStartErrMsg struct{ err error }
@@ -92,33 +95,36 @@ type Model struct {
 	done           bool
 	err            error
 	focusedPane    int // 0=diff, 1=review
-	ch             <-chan claude.StreamEvent
+	ch             <-chan stream.Event
 	autoScroll     bool
 
 	// New fields
-	mode            inputMode
-	gitRangeInput   textinput.Model
-	promptInput     textinput.Model
-	tildeInput      textinput.Model
-	modelName       string
-	diffSrc         diffSource
-	cancelStream    context.CancelFunc
-	cancelDiffFetch context.CancelFunc
-	diffFetchGen    int
-	streamGen       int
-	spinnerIndex    int
-	copied          bool
-	glamourRenderer *glamour.TermRenderer
-	libraryIndex    int
-	personaIndex    int
-	persona         *Persona // nil = no persona
-	promptNoPersona bool     // true when current library entry disables persona
-	statusMsg       string
-	pendingDiff     *diffFetchedMsg // held while awaiting large-diff confirmation
-	zoomed          bool
+	mode               inputMode
+	gitRangeInput      textinput.Model
+	promptInput        textinput.Model
+	tildeInput         textinput.Model
+	modelName          string
+	activeHarness      harness.Harness
+	harnessIndex       int
+	availableHarnesses []harness.Harness
+	diffSrc            diffSource
+	cancelStream       context.CancelFunc
+	cancelDiffFetch    context.CancelFunc
+	diffFetchGen       int
+	streamGen          int
+	spinnerIndex       int
+	copied             bool
+	glamourRenderer    *glamour.TermRenderer
+	libraryIndex       int
+	personaIndex       int
+	persona            *Persona // nil = no persona
+	promptNoPersona    bool     // true when current library entry disables persona
+	statusMsg          string
+	pendingDiff        *diffFetchedMsg // held while awaiting large-diff confirmation
+	zoomed             bool
 }
 
-func New(diffContent string, gitRange, prompt string, ch <-chan claude.StreamEvent, modelName string, cancel context.CancelFunc, persona *Persona) Model {
+func New(diffContent string, gitRange, prompt string, ch <-chan stream.Event, modelName string, cancel context.CancelFunc, persona *Persona, activeHarness harness.Harness, availableHarnesses []harness.Harness) Model {
 	gi := textinput.New()
 	gi.Placeholder = "e.g. HEAD~3..HEAD"
 	gi.CharLimit = 256
@@ -132,26 +138,28 @@ func New(diffContent string, gitRange, prompt string, ch <-chan claude.StreamEve
 	ti.CharLimit = 10
 
 	return Model{
-		diffContent:   diffContent,
-		gitRange:      gitRange,
-		diffLabel:     gitRange,
-		prompt:        prompt,
-		ch:            ch,
-		streaming:     true,
-		autoScroll:    true,
-		focusedPane:   1,
-		modelName:     modelName,
-		cancelStream:  cancel,
-		streamGen:     0,
-		reviewContent: &strings.Builder{},
-		gitRangeInput: gi,
-		promptInput:   pi,
-		tildeInput:    ti,
-		persona:       persona,
+		diffContent:        diffContent,
+		gitRange:           gitRange,
+		diffLabel:          gitRange,
+		prompt:             prompt,
+		ch:                 ch,
+		streaming:          true,
+		autoScroll:         true,
+		focusedPane:        1,
+		modelName:          modelName,
+		activeHarness:      activeHarness,
+		availableHarnesses: availableHarnesses,
+		cancelStream:       cancel,
+		streamGen:          0,
+		reviewContent:      &strings.Builder{},
+		gitRangeInput:      gi,
+		promptInput:        pi,
+		tildeInput:         ti,
+		persona:            persona,
 	}
 }
 
-func NewEmpty(modelName string, persona *Persona) Model {
+func NewEmpty(modelName string, persona *Persona, activeHarness harness.Harness, availableHarnesses []harness.Harness) Model {
 	gi := textinput.New()
 	gi.Placeholder = "e.g. HEAD~3..HEAD"
 	gi.CharLimit = 256
@@ -165,15 +173,17 @@ func NewEmpty(modelName string, persona *Persona) Model {
 	ti.CharLimit = 10
 
 	return Model{
-		prompt:        claude.DefaultUserPrompt,
-		modelName:     modelName,
-		autoScroll:    true,
-		focusedPane:   0,
-		reviewContent: &strings.Builder{},
-		gitRangeInput: gi,
-		promptInput:   pi,
-		tildeInput:    ti,
-		persona:       persona,
+		prompt:             claude.DefaultUserPrompt,
+		modelName:          modelName,
+		activeHarness:      activeHarness,
+		availableHarnesses: availableHarnesses,
+		autoScroll:         true,
+		focusedPane:        0,
+		reviewContent:      &strings.Builder{},
+		gitRangeInput:      gi,
+		promptInput:        pi,
+		tildeInput:         ti,
+		persona:            persona,
 	}
 }
 
@@ -199,7 +209,7 @@ func (m Model) Init() tea.Cmd {
 	)
 }
 
-func waitForStreamGen(ch <-chan claude.StreamEvent, gen int) tea.Cmd {
+func waitForStreamGen(ch <-chan stream.Event, gen int) tea.Cmd {
 	return func() tea.Msg {
 		event, ok := <-ch
 		if !ok {
@@ -266,10 +276,10 @@ func (m Model) buildFullPrompt() string {
 	return claude.BuildPrompt(sys, m.prompt)
 }
 
-func startStreamCmd(prompt, diffText, modelName string) tea.Cmd {
+func startStreamCmd(h harness.Harness, prompt, diffText string) tea.Cmd {
 	return func() tea.Msg {
 		ctx, cancel := context.WithCancel(context.Background())
-		ch, err := claude.RunStreaming(ctx, prompt, diffText, modelName)
+		ch, err := h.RunStreaming(ctx, prompt, diffText)
 		if err != nil {
 			cancel()
 			return streamStartErrMsg{err: err}
@@ -283,6 +293,7 @@ func saveProfileCmd(m Model) tea.Cmd {
 		prof := config.Load()
 		prof.PersonaName = personaName(m.persona)
 		prof.ModelName = m.modelName
+		prof.HarnessName = m.activeHarness.Name()
 		config.Save(prof)
 		return nil
 	}
@@ -360,7 +371,7 @@ func (m Model) footerContent() string {
 		return "prompt: " + m.promptInput.View()
 	case modeTilde:
 		return "HEAD~n..HEAD, n = " + m.tildeInput.View()
-	case modeLibrary, modePersona:
+	case modeLibrary, modePersona, modeHarness:
 		return "[j/k] navigate | [enter] select | [esc] cancel"
 	case modeConfirmLargeDiff:
 		return "[enter] continue review | [esc] cancel"
