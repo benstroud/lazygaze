@@ -9,8 +9,8 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/benstroud/lazyreview/internal/harness"
-	"github.com/benstroud/lazyreview/internal/stream"
+	"github.com/benstroud/lazygaze/internal/harness"
+	"github.com/benstroud/lazygaze/internal/stream"
 )
 
 const DefaultSystemPrompt = "You are reviewing a git diff. The diff is provided via stdin."

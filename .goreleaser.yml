@@ -1,0 +1,55 @@
+version: 2
+
+project_name: lazygaze
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: lazygaze
+    main: .
+    binary: lazygaze
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+
+archives:
+  - id: lazygaze
+    builds:
+      - lazygaze
+    format: tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - LICENSE
+      - README.md
+
+checksum:
+  name_template: "checksums.txt"
+
+brews:
+  - name: lazygaze
+    homepage: "https://github.com/benstroud/lazygaze"
+    description: "AI-powered git diff review in your terminal."
+    license: "MIT"
+    repository:
+      owner: benstroud
+      name: homebrew-tap
+      branch: main
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    commit_author:
+      name: "goreleaserbot"
+      email: "bot@benstroud.com"
+    install: |
+      bin.install "lazygaze"
+    test: |
+      system "#{bin}/lazygaze", "--help"

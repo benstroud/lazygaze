@@ -9,7 +9,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/benstroud/lazyreview/internal/stream"
+	"github.com/benstroud/lazygaze/internal/stream"
 )
 
 // Harness is a CLI-backed LLM runner.

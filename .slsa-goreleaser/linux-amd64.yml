@@ -3,4 +3,4 @@ env:
   - CGO_ENABLED=0
 goos: linux
 goarch: amd64
-binary: lazyreview-linux-amd64
+binary: lazygaze-linux-amd64

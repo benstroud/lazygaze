@@ -8,13 +8,13 @@ import (
 	"os/signal"
 	"strings"
 
-	"github.com/benstroud/lazyreview/internal/claude"
-	"github.com/benstroud/lazyreview/internal/cli"
-	"github.com/benstroud/lazyreview/internal/config"
-	"github.com/benstroud/lazyreview/internal/copilot"
-	"github.com/benstroud/lazyreview/internal/git"
-	"github.com/benstroud/lazyreview/internal/harness"
-	"github.com/benstroud/lazyreview/internal/tui"
+	"github.com/benstroud/lazygaze/internal/claude"
+	"github.com/benstroud/lazygaze/internal/cli"
+	"github.com/benstroud/lazygaze/internal/config"
+	"github.com/benstroud/lazygaze/internal/copilot"
+	"github.com/benstroud/lazygaze/internal/git"
+	"github.com/benstroud/lazygaze/internal/harness"
+	"github.com/benstroud/lazygaze/internal/tui"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
@@ -26,7 +26,7 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "lazyreview [git-range] [prompt]",
+	Use:   "lazygaze [git-range] [prompt]",
 	Short: "Review git diffs with Claude",
 	Args:  cobra.RangeArgs(0, 2),
 	RunE:  run,

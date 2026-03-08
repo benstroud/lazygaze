@@ -3,4 +3,4 @@ env:
   - CGO_ENABLED=0
 goos: windows
 goarch: amd64
-binary: lazyreview-windows-amd64.exe
+binary: lazygaze-windows-amd64.exe

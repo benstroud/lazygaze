@@ -3,4 +3,4 @@ env:
   - CGO_ENABLED=0
 goos: darwin
 goarch: arm64
-binary: lazyreview-darwin-arm64
+binary: lazygaze-darwin-arm64

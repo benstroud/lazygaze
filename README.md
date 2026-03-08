@@ -1,20 +1,19 @@
-# lazyreview
+# lazygaze
 
 **AI-powered git diff review in your terminal.**
 
-`lazyreview` pipes git diffs into Claude and streams the review back in a split-pane TUI. Diff on the left. Analysis on the right. No browser, no context switching.
+The `lazygaze` TUI pipes git diffs to Claude CLI or Github Copilot CLI with
+streaming output, prompt library, and persona system. Diff on the left. Analysis
+on the right. No browser, no context switching. Fast workflow.
 
-[![Go](https://github.com/benstroud/lazyreview/actions/workflows/go.yml/badge.svg)](https://github.com/benstroud/lazyreview/actions/workflows/go.yml) [![Built with bubbletea](https://img.shields.io/badge/built%20with-bubbletea-ff69b4)](https://github.com/charmbracelet/bubbletea) [![Powered by Claude](https://img.shields.io/badge/powered%20by-Claude-orange)](https://www.anthropic.com) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+[![Go](https://github.com/benstroud/lazygaze/actions/workflows/go.yml/badge.svg)](https://github.com/benstroud/lazygaze/actions/workflows/go.yml) [![Built with bubbletea](https://img.shields.io/badge/built%20with-bubbletea-ff69b4)](https://github.com/charmbracelet/bubbletea) [![Powered by Claude](https://img.shields.io/badge/powered%20by-Claude-orange)](https://www.anthropic.com) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
 This software is licensed under the MIT [LICENSE](./LICENSE)
 
 ```diff
 + IMPORTANT
-- The maintainer provides no support.
-- User is responsible for own code quality.
-- User is responsible for all LLM costs incurred.
-- This is beta quality software built to scratch an itch.
-+ Having said that, it seems to work pretty well :)
+- User is responsible for all Claude or Copilot costs incurred and meeting their terms.
+- Lazygaze simply delegates to these CLI tools which you configure.
 ```
 
 ---
@@ -48,17 +47,25 @@ This software is licensed under the MIT [LICENSE](./LICENSE)
 
 ### To run
 
-- `lazyreview` delegates to [Git](https://git-scm.com/) and [Claude CLI](https://github.com/anthropics/claude-code). It expects to find `git` and `claude` shell commands in your `PATH`. Ensure Claude is installed properly, authenticated (`claude --version`), and has credits/subscription.
+- `lazygaze` delegates to [Git](https://git-scm.com/) and [Claude CLI](https://github.com/anthropics/claude-code). It expects to find `git` and `claude` shell commands in your `PATH`. Ensure Claude is installed properly, authenticated (`claude --version`), and has credits/subscription.
 
 ---
 
 ## Installation
 
+### Homebrew
+
 ```bash
-git clone https://github.com/benstroud/lazyreview
-cd lazyreview
+brew install benstroud/tap/lazygaze
+```
+
+### From source
+
+```bash
+git clone https://github.com/benstroud/lazygaze
+cd lazygaze
 make build
-sudo mv lazyreview /usr/local/bin/   # or add to your PATH
+sudo mv lazygaze /usr/local/bin/   # or add to your PATH
 ```
 
 ---
@@ -67,19 +74,19 @@ sudo mv lazyreview /usr/local/bin/   # or add to your PATH
 
 ```bash
 # Launch TUI — enter a git range interactively
-lazyreview
+lazygaze
 
 # Diff expression set at launch instead of interactively (Review the last 3 commits)
-lazyreview HEAD~3..HEAD
+lazygaze HEAD~3..HEAD
 
 # Prompt set a launch instead of interactively
-lazyreview HEAD~1..HEAD "Focus on security vulnerabilities"
+lazygaze HEAD~1..HEAD "Focus on security vulnerabilities"
 
 # Headless non-interactive output (pipes to stdout)
-lazyreview --cli HEAD~1..HEAD
+lazygaze --cli HEAD~1..HEAD
 
 # Specify a model at launch instead of interactively
-lazyreview --model opus HEAD~5..HEAD
+lazygaze --model opus HEAD~5..HEAD
 ```
 
 ---
@@ -114,6 +121,7 @@ lazyreview --model opus HEAD~5..HEAD
 | `P` | Select a reviewer persona |
 | `m` | Cycle model: sonnet → opus → haiku |
 | `c` | Copy focused pane to clipboard |
+| `z` | Zoom in/out of the active pane. Useful before selecting text with mouse |
 
 ---
 
@@ -145,27 +153,6 @@ Press `P` to browse 53 reviewer archetypes organized into 6 categories:
 - **Influencers** — modern open-source voices and engineering culture
 
 Special modes: **(Critical Only)** suppresses style feedback and reports only bugs, security issues, and data loss risks. **(Terse)** returns bullet points only.
-
----
-
-## Architecture
-
-```
-main.go                     Entry point
-cmd/root.go                 Cobra CLI — parses flags, routes to TUI or CLI mode
-internal/
-  claude/claude.go          Wraps the claude CLI; streaming JSON parser
-  git/diff.go               git diff, git show wrappers with input validation
-  cli/cli.go                Non-interactive mode
-  config/config.go          Profile persistence (~/.config/lazyreview/profile.json)
-  tui/
-    model.go                Bubbletea Model — all state, keybindings, message dispatch
-    styles.go               Lipgloss styles; diff syntax colorizer
-    prompts.go              Prompt library entries
-    personas.go             Persona definitions and resolver
-```
-
-**Stream cancellation** uses `context.WithCancel` paired with a generation counter (`streamGen`). Every new stream increments the counter; arriving messages that carry a stale generation are silently dropped. This eliminates races when rapidly switching git ranges or prompts.
 
 ---
 

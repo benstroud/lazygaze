@@ -7,11 +7,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/benstroud/lazyreview/internal/claude"
-	"github.com/benstroud/lazyreview/internal/config"
-	"github.com/benstroud/lazyreview/internal/git"
-	"github.com/benstroud/lazyreview/internal/harness"
-	"github.com/benstroud/lazyreview/internal/stream"
+	"github.com/benstroud/lazygaze/internal/claude"
+	"github.com/benstroud/lazygaze/internal/config"
+	"github.com/benstroud/lazygaze/internal/git"
+	"github.com/benstroud/lazygaze/internal/harness"
+	"github.com/benstroud/lazygaze/internal/stream"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbles/viewport"

@@ -1,4 +1,4 @@
-BINARY := lazyreview
+BINARY := lazygaze
 
 .PHONY: build test clean
 

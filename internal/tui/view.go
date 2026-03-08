@@ -19,9 +19,9 @@ func (m Model) View() string {
 	if harnessName != "claude" {
 		harnessLabel = harnessName
 	}
-	headerText := fmt.Sprintf("lazyreview [%s]", harnessLabel)
+	headerText := fmt.Sprintf("lazygaze [%s]", harnessLabel)
 	if m.diffLabel != "" {
-		headerText = fmt.Sprintf("lazyreview: %s | %s [%s]", m.diffLabel, m.prompt, harnessLabel)
+		headerText = fmt.Sprintf("lazygaze: %s | %s [%s]", m.diffLabel, m.prompt, harnessLabel)
 	}
 	header := headerStyle.Render(headerText)
 	if m.persona != nil {

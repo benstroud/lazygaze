@@ -1,6 +1,6 @@
 package main
 
-import "github.com/benstroud/lazyreview/cmd"
+import "github.com/benstroud/lazygaze/cmd"
 
 // main is the entry point for the LazyReview CLI application.
 // It executes the root command from the cmd package, which handles

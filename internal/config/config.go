@@ -18,7 +18,7 @@ func profilePath() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(dir, "lazyreview", "profile.json"), nil
+	return filepath.Join(dir, "lazygaze", "profile.json"), nil
 }
 
 // Load reads the profile from disk. Returns a zero Profile on any error.

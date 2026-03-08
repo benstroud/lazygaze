@@ -7,8 +7,8 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/benstroud/lazyreview/internal/harness"
-	"github.com/benstroud/lazyreview/internal/stream"
+	"github.com/benstroud/lazygaze/internal/harness"
+	"github.com/benstroud/lazygaze/internal/stream"
 )
 
 // CheckBinary verifies that the copilot CLI is installed and available in PATH.
@@ -44,7 +44,7 @@ func (c Copilot) baseArgs(prompt string) []string {
 }
 
 func buildPromptWithDiff(prompt, diffText string) (string, error) {
-	f, err := os.CreateTemp("", "lazyreview-diff-*")
+	f, err := os.CreateTemp("", "lazygaze-diff-*")
 	if err != nil {
 		return "", err
 	}

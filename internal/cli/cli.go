@@ -7,11 +7,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/benstroud/lazyreview/internal/git"
-	"github.com/benstroud/lazyreview/internal/harness"
+	"github.com/benstroud/lazygaze/internal/git"
+	"github.com/benstroud/lazygaze/internal/harness"
 )
 
-// Run executes the lazyreview CLI workflow. It retrieves the git diff for the
+// Run executes the lazygaze CLI workflow. It retrieves the git diff for the
 // given range, checks if the diff exceeds the size threshold, and if so,
 // prompts the user for confirmation before proceeding. Finally, it runs
 // the harness with the provided prompt and diff text.

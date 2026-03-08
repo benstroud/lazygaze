@@ -1,4 +1,4 @@
-module github.com/benstroud/lazyreview
+module github.com/benstroud/lazygaze
 
 go 1.26
 

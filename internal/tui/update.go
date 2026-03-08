@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/benstroud/lazyreview/internal/git"
+	"github.com/benstroud/lazygaze/internal/git"
 
 	"github.com/atotto/clipboard"
 	"github.com/charmbracelet/bubbles/textinput"

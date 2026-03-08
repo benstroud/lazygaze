@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/benstroud/lazyreview/internal/claude"
-	"github.com/benstroud/lazyreview/internal/harness"
+	"github.com/benstroud/lazygaze/internal/claude"
+	"github.com/benstroud/lazygaze/internal/harness"
 	tea "github.com/charmbracelet/bubbletea"
 )
 

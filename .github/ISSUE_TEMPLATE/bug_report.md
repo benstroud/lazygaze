@@ -27,7 +27,7 @@ If applicable, add screenshots to help explain your problem.
  - OS: [e.g. MacOS]
  - Terminal [e.g. iTerm2]
  - Versions of the above
- - Versions related to lazyreview: Git info, dependency info...
+ - Versions related to lazygaze: Git info, dependency info...
 
 **Additional context**
 Add any other context about the problem here.
