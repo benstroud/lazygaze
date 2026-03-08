@@ -65,6 +65,9 @@ var (
 	personaNameStyle = lipgloss.NewStyle().
 				Foreground(lipgloss.Color("220")).
 				Underline(true)
+
+	scrollPctStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("240"))
 )
 
 // colorizeDiff applies syntax highlighting to a raw diff string by applying
