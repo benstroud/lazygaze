@@ -48,7 +48,7 @@ const (
 	diffSourceHEAD
 )
 
-const footerHints = "[tab] switch pane | [j/k] scroll | [:] git range | [S] staged | [D] uncommitted | [^] last commit | [~] HEAD~n | [/] prompt | [m] model | [c] copy | [L] library | [P] persona | [r] refresh | [q] quit"
+const footerHintsBase = "[tab] switch pane | [j/k] scroll | %s | [:] git range | [S] staged | [D] uncommitted | [^] last commit | [~] HEAD~n | [/] prompt | [m] model | [c] copy | [L] library | [P] persona | [r] refresh | [q] quit"
 
 // Message types with generation tracking for stream messages
 type singleCommitRepoMsg struct{}
@@ -115,6 +115,7 @@ type Model struct {
 	promptNoPersona bool     // true when current library entry disables persona
 	statusMsg       string
 	pendingDiff     *diffFetchedMsg // held while awaiting large-diff confirmation
+	zoomed          bool
 }
 
 func New(diffContent string, gitRange, prompt string, ch <-chan claude.StreamEvent, modelName string, cancel context.CancelFunc, persona *Persona) Model {
@@ -376,10 +377,15 @@ func (m Model) footerContent() string {
 		} else if m.statusMsg != "" {
 			status = m.statusMsg
 		}
-		if status != "" {
-			return footerHints + " | " + status
+		zoomHint := "[z] zoom"
+		if m.zoomed {
+			zoomHint = zoomHintStyle.Render("[z] zoom out")
 		}
-		return footerHints
+		hints := fmt.Sprintf(footerHintsBase, zoomHint)
+		if status != "" {
+			return hints + " | " + status
+		}
+		return hints
 	}
 }
 
@@ -406,8 +412,13 @@ func (m *Model) resizeViewports() {
 		paneHeight = 1
 	}
 
-	borderWidth := 2 // left + right border
-	paneWidth := (m.width / 2) - borderWidth
+	var paneWidth int
+	if m.zoomed {
+		paneWidth = m.width
+	} else {
+		borderWidth := 2 // left + right border
+		paneWidth = (m.width / 2) - borderWidth
+	}
 	if paneWidth < 1 {
 		paneWidth = 1
 	}

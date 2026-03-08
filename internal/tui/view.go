@@ -29,7 +29,16 @@ func (m Model) View() string {
 	// Pane dimensions — derived from actual header/footer heights
 	borderWidth := 2
 	borderHeight := 2
-	paneWidth := (m.width / 2) - borderWidth
+	if m.zoomed {
+		borderWidth = 0
+		borderHeight = 0
+	}
+	var paneWidth int
+	if m.zoomed {
+		paneWidth = m.width - borderWidth
+	} else {
+		paneWidth = (m.width / 2) - borderWidth
+	}
 	if paneWidth < 1 {
 		paneWidth = 1
 	}
@@ -44,6 +53,9 @@ func (m Model) View() string {
 	diffStyle := inactiveBorder
 	if m.focusedPane == 0 {
 		diffStyle = activeBorder
+	}
+	if m.zoomed {
+		diffStyle = lipgloss.NewStyle()
 	}
 	diffView := m.diffViewport.View()
 	diffShowPct := m.diffContent != ""
@@ -60,6 +72,9 @@ func (m Model) View() string {
 	if m.focusedPane == 1 {
 		reviewStyle = activeBorder
 	}
+	if m.zoomed {
+		reviewStyle = lipgloss.NewStyle()
+	}
 	reviewView := m.reviewViewport.View()
 	reviewShowPct := true
 	if m.err != nil {
@@ -75,7 +90,16 @@ func (m Model) View() string {
 	}
 
 	// Join panes
-	panes := lipgloss.JoinHorizontal(lipgloss.Top, diffPane, reviewPane)
+	var panes string
+	if m.zoomed {
+		if m.focusedPane == 0 {
+			panes = diffPane
+		} else {
+			panes = reviewPane
+		}
+	} else {
+		panes = lipgloss.JoinHorizontal(lipgloss.Top, diffPane, reviewPane)
+	}
 
 	return lipgloss.JoinVertical(lipgloss.Left, header, panes, footer)
 }

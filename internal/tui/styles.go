@@ -68,6 +68,11 @@ var (
 
 	scrollPctStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("240"))
+
+	zoomHintStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("229")).
+			Background(lipgloss.Color("63")).
+			Bold(true)
 )
 
 // colorizeDiff applies syntax highlighting to a raw diff string by applying

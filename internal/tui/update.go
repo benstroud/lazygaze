@@ -52,7 +52,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, tea.Quit
 		case "tab":
+			m.zoomed = false
 			m.focusedPane = (m.focusedPane + 1) % 2
+			m.resizeViewports()
+			return m, nil
+		case "z":
+			m.zoomed = !m.zoomed
+			m.resizeViewports()
 			return m, nil
 		case ":":
 			m.mode = modeGitRange
