@@ -113,6 +113,7 @@ type Model struct {
 	diffFetchGen       int
 	streamGen          int
 	spinnerIndex       int
+	pulseIndex         int
 	copied             bool
 	glamourRenderer    *glamour.TermRenderer
 	libraryIndex       int
@@ -271,7 +272,11 @@ func fetchDiffRootCmd(ctx context.Context, gen int) tea.Cmd {
 func (m Model) buildFullPrompt() string {
 	sys := claude.DefaultSystemPrompt
 	if m.persona != nil && !m.promptNoPersona {
-		sys += fmt.Sprintf("\nAdopt the voice, opinions, and reviewing style of %s. %s. Review as they would — with their known priorities, pet peeves, and communication style.", m.persona.Name, m.persona.Description)
+		if m.persona.Anonymous {
+			sys += fmt.Sprintf("\n%s", m.persona.Description)
+		} else {
+			sys += fmt.Sprintf("\nAdopt the voice, opinions, and reviewing style of %s. %s. Review as they would — with their known priorities, pet peeves, and communication style.", m.persona.Name, m.persona.Description)
+		}
 	}
 	return claude.BuildPrompt(sys, m.prompt)
 }

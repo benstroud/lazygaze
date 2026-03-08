@@ -1,6 +1,8 @@
 package tui
 
 import (
+	"fmt"
+	"math"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -74,6 +76,21 @@ var (
 			Background(lipgloss.Color("63")).
 			Bold(true)
 )
+
+// pulseCycleTicks is the number of 80ms spinner ticks per full breath cycle.
+// 40 ticks × 80ms = 3.2s per cycle.
+const pulseCycleTicks = 40
+
+func activeBorderPulsed(idx int) lipgloss.Style {
+	// sine oscillates -1..1; shift to 0..1 for a smooth inhale/exhale
+	t := (1 + math.Sin(2*math.Pi*float64(idx)/float64(pulseCycleTicks))) / 2
+	// interpolate green channel: dim #005f00 (95) → peak #009b00 (155)
+	green := 0x5f + int(t*float64(0x9b-0x5f))
+	color := lipgloss.Color(fmt.Sprintf("#00%02x00", green))
+	return lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(color)
+}
 
 // colorizeDiff applies syntax highlighting to a raw diff string by applying
 // different styles based on the prefix of each line. Meta lines (+++,

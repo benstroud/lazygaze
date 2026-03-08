@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/bubbles/viewport"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -215,13 +216,17 @@ func (m Model) handlePersonaInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if m.personaIndex < maxIndex {
 			m.personaIndex++
 		}
-		m.reviewViewport.SetContent(m.renderPersonaList())
+		content, sel := m.renderPersonaList()
+		m.reviewViewport.SetContent(content)
+		scrollPersonaViewport(&m.reviewViewport, sel)
 		return m, nil
 	case "k", "up":
 		if m.personaIndex > 0 {
 			m.personaIndex--
 		}
-		m.reviewViewport.SetContent(m.renderPersonaList())
+		content, sel := m.renderPersonaList()
+		m.reviewViewport.SetContent(content)
+		scrollPersonaViewport(&m.reviewViewport, sel)
 		return m, nil
 	default:
 		return m, nil
@@ -233,36 +238,59 @@ func (m Model) handlePersonaInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 // followed by all available personas with their names and descriptions.
 // The currently selected item is highlighted using the selected style.
 // Navigation hints are shown at the top of the list.
-func (m Model) renderPersonaList() string {
+// Returns the rendered string and the line number of the selected item.
+func (m Model) renderPersonaList() (string, int) {
 	var b strings.Builder
-	b.WriteString(lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("229")).Render("Persona"))
-	b.WriteString("\n")
-	b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("240")).Render("j/k navigate | Enter select | Esc cancel"))
-	b.WriteString("\n\n")
+	lineCount := 0
+	selectedLine := 0
+
+	write := func(s string) {
+		b.WriteString(s)
+		lineCount += strings.Count(s, "\n")
+	}
+
+	write(lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("229")).Render("Persona") + "\n")
+	write(lipgloss.NewStyle().Foreground(lipgloss.Color("240")).Render("j/k navigate | Enter select | Esc cancel") + "\n\n")
 
 	// Special options at the top
+	write(libraryCategoryStyle.Render("Filters") + "\n")
 	specialOptions := []string{"(None)", "(Critical Only)", "(Terse)"}
 	for i, label := range specialOptions {
 		if i == m.personaIndex {
-			b.WriteString(librarySelectedStyle.Render("> " + label))
+			selectedLine = lineCount
+			write(librarySelectedStyle.Render("> "+label) + "\n")
 		} else {
-			b.WriteString(libraryItemStyle.Render("  " + label))
+			write(libraryItemStyle.Render("  "+label) + "\n")
 		}
-		b.WriteString("\n")
 	}
 
 	offset := len(specialOptions)
-	for i, p := range Personas {
-		label := fmt.Sprintf("%s — %s", p.Name, p.Description)
-		if i+offset == m.personaIndex {
-			b.WriteString(librarySelectedStyle.Render("> " + label))
-		} else {
-			b.WriteString(libraryItemStyle.Render("  " + label))
+	for _, cat := range PersonaCategories {
+		write(libraryCategoryStyle.Render(cat) + "\n")
+		for i, p := range Personas {
+			if p.Category != cat {
+				continue
+			}
+			label := fmt.Sprintf("%s — %s", p.Name, p.Description)
+			if i+offset == m.personaIndex {
+				selectedLine = lineCount
+				write(librarySelectedStyle.Render("> "+label) + "\n")
+			} else {
+				write(libraryItemStyle.Render("  "+label) + "\n")
+			}
 		}
-		b.WriteString("\n")
 	}
 
-	return b.String()
+	return b.String(), selectedLine
+}
+
+// scrollPersonaViewport adjusts vp's YOffset so that selectedLine is visible.
+func scrollPersonaViewport(vp *viewport.Model, selectedLine int) {
+	if selectedLine < vp.YOffset {
+		vp.SetYOffset(selectedLine)
+	} else if selectedLine >= vp.YOffset+vp.Height {
+		vp.SetYOffset(selectedLine - vp.Height + 1)
+	}
 }
 
 // handleConfirmLargeDiff processes keyboard input when the user is confirming

@@ -31,7 +31,7 @@ This software is licensed under the MIT [LICENSE](./LICENSE)
 |---|---|
 | **Split-pane TUI** | Syntax-highlighted diff left, streaming markdown review right |
 | **Prompt library** | 26 curated prompts across architecture, security, performance, testing, and workflow |
-| **Personas** | Review as Linus Torvalds, Barbara Liskov, John Carmack, and 20+ others |
+| **Personas** | 53 reviewer archetypes across 6 categories; living people represented by descriptive titles |
 | **Model cycling** | Switch between Sonnet, Opus, and Haiku on the fly |
 | **Multiple diff sources** | Git ranges, staged changes, initial commit |
 | **Clipboard** | Copy diff or review to clipboard with a single key |
@@ -135,7 +135,14 @@ Press `L` to browse 26 built-in prompts organized by category:
 
 ## Personas
 
-Press `P` to review your diff through the lens of a legendary programmer. Includes Linus Torvalds, Barbara Liskov, Donald Knuth, John Carmack, Grace Hopper, and 18 others — each with their known priorities, pet peeves, and communication style embedded in the system prompt.
+Press `P` to browse 53 reviewer archetypes organized into 6 categories:
+
+- **CS Foundations** — structured programming, algorithmic rigor, formal correctness
+- **Legendary Creators** — language designers, OS authors, paradigm inventors
+- **Clean Code & Design** — readability, SOLID principles, refactoring
+- **Systems & Performance** — low-level optimization, real-time constraints
+- **Educators & Evangelists** — pedagogy, documentation, knowledge transfer
+- **Influencers** — modern open-source voices and engineering culture
 
 Special modes: **(Critical Only)** suppresses style feedback and reports only bugs, security issues, and data loss risks. **(Terse)** returns bullet points only.
 

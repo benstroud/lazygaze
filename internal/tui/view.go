@@ -57,7 +57,11 @@ func (m Model) View() string {
 	// Diff pane
 	diffStyle := inactiveBorder
 	if m.focusedPane == 0 {
-		diffStyle = activeBorder
+		if m.streaming {
+			diffStyle = activeBorderPulsed(m.pulseIndex)
+		} else {
+			diffStyle = activeBorder
+		}
 	}
 	if m.zoomed {
 		diffStyle = lipgloss.NewStyle()
@@ -75,7 +79,11 @@ func (m Model) View() string {
 	// Review pane
 	reviewStyle := inactiveBorder
 	if m.focusedPane == 1 {
-		reviewStyle = activeBorder
+		if m.streaming {
+			reviewStyle = activeBorderPulsed(m.pulseIndex)
+		} else {
+			reviewStyle = activeBorder
+		}
 	}
 	if m.zoomed {
 		reviewStyle = lipgloss.NewStyle()

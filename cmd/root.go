@@ -134,7 +134,11 @@ func run(cmd *cobra.Command, args []string) error {
 
 	sys := claude.DefaultSystemPrompt
 	if persona != nil {
-		sys += fmt.Sprintf("\nAdopt the voice, opinions, and reviewing style of %s. %s. Review as they would — with their known priorities, pet peeves, and communication style.", persona.Name, persona.Description)
+		if persona.Anonymous {
+			sys += fmt.Sprintf("\n%s", persona.Description)
+		} else {
+			sys += fmt.Sprintf("\nAdopt the voice, opinions, and reviewing style of %s. %s. Review as they would — with their known priorities, pet peeves, and communication style.", persona.Name, persona.Description)
+		}
 	}
 	fullPrompt := claude.BuildPrompt(sys, prompt)
 	streamCtx, streamCancel := context.WithCancel(ctx)

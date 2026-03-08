@@ -168,7 +168,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "P":
 			m.mode = modePersona
 			m.personaIndex = 0
-			m.reviewViewport.SetContent(m.renderPersonaList())
+			content, _ := m.renderPersonaList()
+			m.reviewViewport.SetContent(content)
 			m.reviewViewport.GotoTop()
 			return m, nil
 		}
@@ -253,6 +254,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		m.spinnerIndex = (m.spinnerIndex + 1) % len(spinnerFrames)
+		m.pulseIndex = (m.pulseIndex + 1) % pulseCycleTicks
 		return m, tea.Tick(80*time.Millisecond, func(time.Time) tea.Msg { return spinTickMsg{} })
 
 	case streamStartedMsg:
@@ -261,6 +263,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.streaming = true
 		m.statusMsg = ""
 		m.spinnerIndex = 0
+		m.pulseIndex = 0
 		m.streamGen++
 		m.focusedPane = 1
 		return m, tea.Batch(
