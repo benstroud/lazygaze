@@ -4,7 +4,7 @@
 
 The `lazygaze` TUI pipes git diffs to Claude CLI or Github Copilot CLI with
 streaming output, prompt library, and persona system. Diff on the left. Analysis
-on the right. No browser, no context switching. Fast workflow.
+on the right. No browser, reduced context switching. Fast workflow.
 
 [![Go](https://github.com/benstroud/lazygaze/actions/workflows/go.yml/badge.svg)](https://github.com/benstroud/lazygaze/actions/workflows/go.yml) [![Built with bubbletea](https://img.shields.io/badge/built%20with-bubbletea-ff69b4)](https://github.com/charmbracelet/bubbletea) [![Powered by Claude](https://img.shields.io/badge/powered%20by-Claude-orange)](https://www.anthropic.com) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 

@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lazygaze — AI-powered git diff review</title>
+    <meta
+      name="description"
+      content="AI-powered git diff review in your terminal. Split-pane TUI with streaming analysis, prompt library, and personas."
+    />
+    <meta property="og:title" content="Lazygaze" />
+    <meta
+      property="og:description"
+      content="AI-powered git diff review in your terminal. Diff left, analysis right."
+    />
+    <meta property="og:image" content="assets/screenshot_output.png" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://benstroud.github.io/lazygaze/" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="bg-orb orb-a"></div>
+    <div class="bg-orb orb-b"></div>
+    <header class="site-header">
+      <div class="logo">lazygaze</div>
+      <nav class="nav">
+        <a href="https://github.com/benstroud/lazygaze#readme">README</a>
+        <a href="https://github.com/benstroud/lazygaze">GitHub</a>
+      </nav>
+    </header>
+
+    <main class="hero">
+      <section class="hero-copy">
+        <p class="eyebrow">AI-powered terminal Git diff review</p>
+        <h1>Diff left. Insight right.</h1>
+        <p class="lead">
+          Lazygaze is a split-pane TUI that streams AI feedback next to your git
+          diffs. Zero browser tabs, reduced context switching, fast feedback cycles.
+        </p>
+        <div class="cta">
+          <a class="btn primary" href="https://github.com/benstroud/lazygaze#installation">
+            Install
+          </a>
+        </div>
+        <div class="integrations">
+          <span>Integrates with Claude Code</span>
+          <span>Integrates with GitHub Copilot</span>
+        </div>
+        <div class="meta">
+          <span>MIT licensed</span>
+          <span>Go 1.26+</span>
+          <span>Built with Bubble Tea</span>
+        </div>
+      </section>
+
+      <section class="hero-media" aria-label="Product screenshot">
+        <div class="frame">
+          <img
+            src="assets/screenshot_output.png"
+            alt="Lazygaze split-pane TUI showing a diff and AI review"
+          />
+        </div>
+        <div class="caption">
+          Streaming review, prompt library, and personas in one terminal view.
+        </div>
+      </section>
+    </main>
+
+    <section class="features">
+      <div class="feature">
+        <h3>Split-pane flow</h3>
+        <p>Syntax-highlighted diffs with live analysis beside them.</p>
+      </div>
+      <div class="feature">
+        <h3>Curated prompts</h3>
+        <p>Architecture, security, performance, and workflow presets.</p>
+      </div>
+      <div class="feature">
+        <h3>Persona reviews</h3>
+        <p>50+ reviewer archetypes for tone and focus control.</p>
+      </div>
+    </section>
+
+    <footer class="site-footer">
+      <span>Open source under the MIT License.</span>
+    </footer>
+  </body>
+</html>
