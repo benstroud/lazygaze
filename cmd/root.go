@@ -20,16 +20,19 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var Version = "dev"
+
 var (
 	cliMode bool
 	model   string
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "lazygaze [git-range] [prompt]",
-	Short: "Review git diffs with Claude",
-	Args:  cobra.RangeArgs(0, 2),
-	RunE:  run,
+	Use:     "lazygaze [git-range] [prompt]",
+	Short:   "Review git diffs with Claude",
+	Version: Version,
+	Args:    cobra.RangeArgs(0, 2),
+	RunE:    run,
 }
 
 func init() {

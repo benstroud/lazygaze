@@ -1,0 +1,45 @@
+name: macOS Universal Tarball
+
+on:
+  workflow_dispatch:
+  release:
+    types: [created]
+
+permissions:
+  contents: write
+
+jobs:
+  universal:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Build darwin-amd64
+        run: |
+          CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build \
+            -ldflags "-s -w -X github.com/benstroud/lazygaze/cmd.Version=${{ github.ref_name }}" \
+            -o lazygaze-darwin-amd64 .
+
+      - name: Build darwin-arm64
+        run: |
+          CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build \
+            -ldflags "-s -w -X github.com/benstroud/lazygaze/cmd.Version=${{ github.ref_name }}" \
+            -o lazygaze-darwin-arm64 .
+
+      - name: Create universal binary
+        run: lipo -create -output lazygaze lazygaze-darwin-amd64 lazygaze-darwin-arm64
+
+      - name: Create tarball
+        run: tar -czf lazygaze-macos-universal.tar.gz lazygaze
+
+      - name: Upload to release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${{ github.ref_name }}" lazygaze-macos-universal.tar.gz --clobber
