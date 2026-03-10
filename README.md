@@ -98,6 +98,7 @@ lazygaze --model opus HEAD~5..HEAD
 | Key | Action |
 |-----|--------|
 | `tab` | Switch focus between diff and review panes |
+| `?` | Open full keybinding help screen |
 | `j` / `k` | Scroll focused pane |
 | `q` / `ctrl+c` | Quit |
 

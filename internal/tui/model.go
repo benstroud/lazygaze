@@ -39,6 +39,7 @@ const (
 	modePersona
 	modeConfirmLargeDiff
 	modeHarness
+	modeHelp
 )
 
 type diffSource int
@@ -52,7 +53,36 @@ const (
 	diffSourceUpstream
 )
 
-const footerHintsBase = "[tab] switch pane | [j/k] scroll | %s | [:] git range | [S] staged | [D] dirty | [^] last commit | [U] upstream | [~] HEAD~n | [/] prompt | [m] model | [H] harness | [c] copy | [L] library | [P] persona | [r] refresh | [q] quit"
+const footerHintSeparator = " | "
+
+const (
+	keyTab        = "tab"
+	keyScrollDown = "j"
+	keyScrollUp   = "k"
+	keyDown       = "down"
+	keyUp         = "up"
+	keyZoom       = "z"
+	keyHelp       = "?"
+	keyHelpAlt    = "shift+/"
+	keyF1         = "f1"
+	keyQuit       = "q"
+	keyCtrlC      = "ctrl+c"
+	keyGitRange   = ":"
+	keyPrompt     = "/"
+	keyModel      = "m"
+	keyHarness    = "H"
+	keyCopy       = "c"
+	keyTilde      = "~"
+	keyStaged     = "S"
+	keyDirty      = "D"
+	keyLastCommit = "^"
+	keyUpstream   = "U"
+	keyRefresh    = "r"
+	keyLibrary    = "L"
+	keyPersona    = "P"
+	keyEnter      = "enter"
+	keyEsc        = "esc"
+)
 
 // Message types with generation tracking for stream messages
 type singleCommitRepoMsg struct{}
@@ -387,10 +417,12 @@ func (m Model) footerContent() string {
 		return "prompt: " + m.promptInput.View()
 	case modeTilde:
 		return "HEAD~n..HEAD, n = " + m.tildeInput.View()
+	case modeHelp:
+		return fmt.Sprintf("[%s/%s/%s/%s] scroll | [%s/%s/%s/%s/%s] close", keyScrollDown, keyScrollUp, keyDown, keyUp, keyEsc, keyQuit, keyCtrlC, keyHelp, keyF1)
 	case modeLibrary, modePersona, modeHarness:
-		return "[j/k] navigate | [enter] select | [esc] cancel"
+		return fmt.Sprintf("[%s/%s] navigate | [%s] select | [%s] cancel", keyScrollDown, keyScrollUp, keyEnter, keyEsc)
 	case modeConfirmLargeDiff:
-		return "[enter] continue review | [esc] cancel"
+		return fmt.Sprintf("[%s] continue review | [%s] cancel", keyEnter, keyEsc)
 	default:
 		status := ""
 		if m.copied {
@@ -404,16 +436,88 @@ func (m Model) footerContent() string {
 		} else if m.statusMsg != "" {
 			status = m.statusMsg
 		}
-		zoomHint := "[z] zoom"
+		zoomHint := fmt.Sprintf("[%s] zoom", keyZoom)
 		if m.zoomed {
-			zoomHint = zoomHintStyle.Render("[z] zoom out")
+			zoomHint = zoomHintStyle.Render(fmt.Sprintf("[%s] zoom out", keyZoom))
 		}
-		hints := fmt.Sprintf(footerHintsBase, zoomHint)
+		hints := m.footerHints(zoomHint)
 		if status != "" {
-			return hints + " | " + status
+			if hints == "" {
+				return status
+			}
+			full := hints + footerHintSeparator + status
+			if lipgloss.Width(full) <= m.width {
+				return full
+			}
+			if lipgloss.Width(hints) <= m.width {
+				return hints
+			}
 		}
 		return hints
 	}
+}
+
+func (m Model) footerHints(zoomHint string) string {
+	available := m.width
+	if available < 1 {
+		return ""
+	}
+
+	essential := []string{
+		fmt.Sprintf("[%s] switch pane", keyTab),
+		fmt.Sprintf("[%s/%s] scroll", keyScrollDown, keyScrollUp),
+		zoomHint,
+		fmt.Sprintf("[%s] quit", keyQuit),
+		fmt.Sprintf("[%s/%s] help", keyHelp, keyF1),
+	}
+
+	optional := []string{
+		fmt.Sprintf("[%s] git range", keyGitRange),
+		fmt.Sprintf("[%s] prompt", keyPrompt),
+		fmt.Sprintf("[%s] staged", keyStaged),
+		fmt.Sprintf("[%s] dirty", keyDirty),
+		fmt.Sprintf("[%s] last commit", keyLastCommit),
+		fmt.Sprintf("[%s] upstream", keyUpstream),
+		fmt.Sprintf("[%s] HEAD~n", keyTilde),
+	}
+	if m.diffContent != "" {
+		optional = append(optional, fmt.Sprintf("[%s] refresh", keyRefresh))
+	}
+	optional = append(optional,
+		fmt.Sprintf("[%s] prompt library", keyLibrary),
+		fmt.Sprintf("[%s] persona", keyPersona),
+		fmt.Sprintf("[%s] model", keyModel),
+		fmt.Sprintf("[%s] copy", keyCopy),
+	)
+	if len(m.availableHarnesses) > 1 {
+		optional = append(optional, fmt.Sprintf("[%s] harness", keyHarness))
+	}
+
+	// Keep the essentials compact and always present when possible, then append
+	// lower-priority items until we run out of terminal width.
+	parts := append([]string{}, essential...)
+	for _, keyHint := range optional {
+		parts = append(parts, keyHint)
+	}
+
+	line := ""
+	used := 0
+	for _, part := range parts {
+		sep := ""
+		if line != "" {
+			sep = footerHintSeparator
+		}
+		candidate := sep + part
+		if used+lipgloss.Width(candidate) > available {
+			break
+		}
+		line += candidate
+		used += lipgloss.Width(candidate)
+	}
+	if line == "" && zoomHint != "" {
+		return zoomHint
+	}
+	return line
 }
 
 func (m *Model) footerLines() int {

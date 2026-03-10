@@ -95,7 +95,7 @@ func (m Model) View() string {
 		reviewShowPct = false
 	} else if m.reviewContent.Len() == 0 && !m.streaming &&
 		m.mode != modeConfirmLargeDiff && m.mode != modeLibrary &&
-		m.mode != modePersona && m.mode != modeHarness {
+		m.mode != modePersona && m.mode != modeHarness && m.mode != modeHelp {
 		reviewView = placeholderStyle.Render("The LLM output will appear here")
 		reviewShowPct = false
 	}

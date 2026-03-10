@@ -44,10 +44,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.mode == modeHarness {
 			return m.handleHarnessInput(msg)
 		}
+		if m.mode == modeHelp {
+			return m.handleHelpInput(msg)
+		}
 
 		// Normal mode keys
 		switch msg.String() {
-		case "q", "ctrl+c":
+		case keyQuit, keyCtrlC:
 			if m.cancelStream != nil {
 				m.cancelStream()
 			}
@@ -55,26 +58,34 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.cancelDiffFetch()
 			}
 			return m, tea.Quit
-		case "tab":
+		case keyTab:
 			m.zoomed = false
 			m.focusedPane = (m.focusedPane + 1) % 2
 			m.resizeViewports()
 			return m, nil
-		case "z":
+		case keyZoom:
 			m.zoomed = !m.zoomed
 			m.resizeViewports()
 			return m, nil
-		case ":":
+		case keyGitRange:
 			m.mode = modeGitRange
 			m.gitRangeInput.SetValue("")
 			m.gitRangeInput.Focus()
 			return m, textinput.Blink
-		case "/":
+		case keyPrompt:
 			m.mode = modePrompt
 			m.promptInput.SetValue("")
 			m.promptInput.Focus()
 			return m, textinput.Blink
-		case "m":
+		case keyHelp, keyHelpAlt, keyF1:
+			m.mode = modeHelp
+			m.focusedPane = 1
+			m.zoomed = false
+			m.resizeViewports()
+			m.reviewViewport.SetContent(m.renderHelp())
+			m.reviewViewport.GotoTop()
+			return m, nil
+		case keyModel:
 			// Cycle through supported models
 			for i, name := range supportedModels {
 				if name == m.modelName {
@@ -86,7 +97,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.modelName = supportedModels[0]
 			m.activeHarness = m.activeHarness.WithModel(m.modelName)
 			return m, saveProfileCmd(m)
-		case "H":
+		case keyHarness:
 			if len(m.availableHarnesses) <= 1 {
 				m.statusMsg = "Only one harness available"
 				return m, nil
@@ -101,7 +112,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.reviewViewport.SetContent(m.renderHarnessList())
 			m.reviewViewport.GotoTop()
 			return m, nil
-		case "c":
+		case keyCopy:
 			var content string
 			if m.focusedPane == 0 {
 				content = m.diffContent
@@ -117,33 +128,33 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			m.copied = true
 			return m, tea.Tick(2*time.Second, func(time.Time) tea.Msg { return copyFadeMsg{} })
-		case "~":
+		case keyTilde:
 			m.mode = modeTilde
 			m.tildeInput.SetValue("")
 			m.tildeInput.Focus()
 			return m, textinput.Blink
-		case "S":
+		case keyStaged:
 			var ctx context.Context
 			m, ctx = resetForNewStream(m)
 			m.diffSrc = diffSourceStaged
 			return m, fetchDiffStagedCmd(ctx, m.diffFetchGen)
-		case "D":
+		case keyDirty:
 			var ctx context.Context
 			m, ctx = resetForNewStream(m)
 			m.diffSrc = diffSourceHEAD
 			return m, fetchDiffHEADCmd(ctx, m.diffFetchGen)
-		case "^":
+		case keyLastCommit:
 			m.gitRange = "HEAD^..HEAD"
 			var ctx context.Context
 			m, ctx = resetForNewStream(m)
 			m.diffSrc = diffSourceRange
 			return m, fetchDiffCmd(ctx, m.gitRange, m.diffFetchGen)
-		case "U":
+		case keyUpstream:
 			var ctx context.Context
 			m, ctx = resetForNewStream(m)
 			m.diffSrc = diffSourceUpstream
 			return m, fetchDiffUpstreamCmd(ctx, m.diffFetchGen)
-		case "r":
+		case keyRefresh:
 			if m.diffSrc == diffSourceNone {
 				m.err = fmt.Errorf("nothing to refresh — press : to set a git range first")
 				return m, nil
@@ -163,7 +174,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, fetchDiffUpstreamCmd(ctx, m.diffFetchGen)
 			}
 			return m, nil
-		case "L":
+		case keyLibrary:
 			if m.diffContent == "" {
 				m.err = fmt.Errorf("no diff loaded — press : to set a git range first")
 				return m, nil
@@ -173,7 +184,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.reviewViewport.SetContent(m.renderLibraryList())
 			m.reviewViewport.GotoTop()
 			return m, nil
-		case "P":
+		case keyPersona:
 			m.mode = modePersona
 			m.personaIndex = 0
 			content, _ := m.renderPersonaList()
@@ -307,9 +318,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		m.reviewContent.WriteString(msg.content)
-		m.reviewViewport.SetContent(m.reviewContent.String())
-		if m.autoScroll {
-			m.reviewViewport.GotoBottom()
+		if m.mode != modeHelp {
+			m.reviewViewport.SetContent(m.reviewContent.String())
+			if m.autoScroll {
+				m.reviewViewport.GotoBottom()
+			}
 		}
 		return m, waitForStreamGen(m.ch, m.streamGen)
 
@@ -320,8 +333,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.streaming = false
 		m.done = true
 		m.statusMsg = ""
-		m.reviewViewport.SetContent(m.renderMarkdown(m.reviewContent.String()))
-		m.reviewViewport.GotoTop()
+		if m.mode != modeHelp {
+			m.reviewViewport.SetContent(m.renderMarkdown(m.reviewContent.String()))
+			m.reviewViewport.GotoTop()
+		}
 		if m.cancelStream != nil {
 			m.cancelStream()
 			m.cancelStream = nil

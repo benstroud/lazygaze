@@ -2,11 +2,13 @@ package tui
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/benstroud/lazygaze/internal/claude"
 	"github.com/benstroud/lazygaze/internal/harness"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 func TestResetForNewStream(t *testing.T) {
@@ -186,5 +188,114 @@ func TestNewEmpty_Defaults(t *testing.T) {
 	}
 	if m.reviewContent == nil {
 		t.Error("reviewContent should be initialized")
+	}
+}
+
+func TestFooterHints_Adaptive(t *testing.T) {
+	m := NewEmpty("sonnet", nil, claude.New("sonnet"), []harness.Harness{claude.New("sonnet"), claude.New("opus")})
+	m.width = 220
+	m.diffContent = "diff"
+	got := m.footerContent()
+
+	required := []string{"[tab] switch pane", "[j/k] scroll", "[?/f1] help", "[:] git range"}
+	for _, s := range required {
+		if strings.Contains(got, s) {
+			continue
+		}
+		t.Fatalf("expected footer to include %q, got: %s", s, got)
+	}
+
+	if !strings.Contains(got, "[q] quit") {
+		t.Fatalf("expected footer to include quit hint")
+	}
+
+	m.width = 40
+	got = m.footerContent()
+	if lipgloss.Width(got) > m.width {
+		t.Fatalf("footer should fit in available width (%d): %q", m.width, got)
+	}
+
+	m.mode = modeHelp
+	got = m.footerContent()
+	if !strings.Contains(got, "close") {
+		t.Fatalf("expected help-mode footer to include close guidance, got: %q", got)
+	}
+}
+
+func TestRenderHelp_Comprehensive(t *testing.T) {
+	m := NewEmpty("sonnet", nil, claude.New("sonnet"), []harness.Harness{claude.New("sonnet"), claude.New("opus")})
+	help := m.renderHelp()
+
+	required := []string{
+		"[tab] switch focused pane",
+		"[j/k/down/up] scroll focused pane",
+		"[z] zoom",
+		"[?/f1] open this cheat sheet",
+		"[/] set a custom prompt",
+		"[L] open prompt library",
+		"[P] choose review persona",
+		"[m] cycle review model",
+		"[c] copy focused pane",
+		"[H] choose review harness",
+		"[:] set an arbitrary git range",
+		"[~] open HEAD~n..HEAD picker",
+		"[^] review last commit",
+		"[S] review staged changes",
+		"[D] review uncommitted changes",
+		"[U] review upstream diff",
+		"[r] refresh current diff",
+		"git range (:): [enter] fetch | [esc] cancel",
+		"library/persona/harness: [j/k/down/up] navigate | [enter] select | [esc] cancel",
+		"help mode: [j/k/down/up] scroll | [esc/q/ctrl+c/?/f1] close",
+		"[q] / [ctrl+c] quit",
+	}
+	for _, s := range required {
+		if !strings.Contains(help, s) {
+			t.Fatalf("help text missing %q\nhelp:\n%q", s, help)
+		}
+	}
+}
+
+func TestHelpKeybinding_OpensHelpMode(t *testing.T) {
+	m := NewEmpty("sonnet", nil, claude.New("sonnet"), []harness.Harness{claude.New("sonnet")})
+	m.width = 120
+	m.height = 40
+	m.resizeViewports()
+
+	result, _ := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}})
+	model := result.(Model)
+	if model.mode != modeHelp {
+		t.Fatalf("expected modeHelp after '?', got %v", model.mode)
+	}
+}
+
+func TestHelpF1Keybinding_OpensHelpMode(t *testing.T) {
+	m := NewEmpty("sonnet", nil, claude.New("sonnet"), []harness.Harness{claude.New("sonnet")})
+	m.width = 120
+	m.height = 40
+	m.resizeViewports()
+
+	result, _ := m.Update(tea.KeyMsg{Type: tea.KeyF1})
+	model := result.(Model)
+	if model.mode != modeHelp {
+		t.Fatalf("expected modeHelp after F1, got %v", model.mode)
+	}
+}
+
+func TestHelpMode_RendersLegendInsteadOfPlaceholder(t *testing.T) {
+	m := NewEmpty("sonnet", nil, claude.New("sonnet"), []harness.Harness{claude.New("sonnet")})
+	m.width = 120
+	m.height = 40
+	m.mode = modeHelp
+	m.focusedPane = 1
+	m.resizeViewports()
+	m.reviewViewport.SetContent(m.renderHelp())
+
+	view := m.View()
+	if !strings.Contains(view, "Keyboard Shortcuts") {
+		t.Fatalf("expected help legend in view, got: %q", view)
+	}
+	if strings.Contains(view, "The LLM output will appear here") {
+		t.Fatalf("expected help mode to suppress empty review placeholder")
 	}
 }

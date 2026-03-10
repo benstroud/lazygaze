@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/bubbles/viewport"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -17,7 +17,7 @@ import (
 // When a valid range is submitted, it transitions the model to fetch and display the diff.
 func (m Model) handleGitRangeInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
-	case "enter":
+	case keyEnter:
 		val := strings.TrimSpace(m.gitRangeInput.Value())
 		m.mode = modeNormal
 		m.gitRangeInput.Blur()
@@ -28,7 +28,7 @@ func (m Model) handleGitRangeInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m, ctx = resetForNewStream(m)
 		m.diffSrc = diffSourceRange
 		return m, fetchDiffCmd(ctx, val, m.diffFetchGen)
-	case "esc":
+	case keyEsc:
 		m.mode = modeNormal
 		m.gitRangeInput.Blur()
 		return m, nil
@@ -46,7 +46,7 @@ func (m Model) handleGitRangeInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 // If the prompt is empty or no diff content is loaded, an error is returned.
 func (m Model) handlePromptInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
-	case "enter":
+	case keyEnter:
 		val := strings.TrimSpace(m.promptInput.Value())
 		m.mode = modeNormal
 		m.promptInput.Blur()
@@ -61,7 +61,7 @@ func (m Model) handlePromptInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.promptNoPersona = false
 		m = resetForNewReview(m)
 		return m, startStreamCmd(m.activeHarness, m.buildFullPrompt(), m.diffContent)
-	case "esc":
+	case keyEsc:
 		m.mode = modeNormal
 		m.promptInput.Blur()
 		return m, nil
@@ -84,7 +84,7 @@ func (m Model) handlePromptInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 // Returns the updated model and any resulting command.
 func (m Model) handleTildeInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
-	case "enter":
+	case keyEnter:
 		val := strings.TrimSpace(m.tildeInput.Value())
 		m.mode = modeNormal
 		m.tildeInput.Blur()
@@ -101,7 +101,7 @@ func (m Model) handleTildeInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m, ctx = resetForNewStream(m)
 		m.diffSrc = diffSourceRange
 		return m, fetchDiffCmd(ctx, m.gitRange, m.diffFetchGen)
-	case "esc":
+	case keyEsc:
 		m.mode = modeNormal
 		m.tildeInput.Blur()
 		return m, nil
@@ -119,24 +119,24 @@ func (m Model) handleTildeInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 // to normal mode.
 func (m Model) handleLibraryInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
-	case "enter":
+	case keyEnter:
 		entry := PromptLibrary[m.libraryIndex]
 		m.prompt = entry.Prompt
 		m.promptNoPersona = entry.NoPersona
 		m.mode = modeNormal
 		m = resetForNewReview(m)
 		return m, startStreamCmd(m.activeHarness, m.buildFullPrompt(), m.diffContent)
-	case "esc":
+	case keyEsc:
 		m.mode = modeNormal
 		m.reviewViewport.SetContent(m.renderMarkdown(m.reviewContent.String()))
 		return m, nil
-	case "j", "down":
+	case keyScrollDown, keyDown:
 		if m.libraryIndex < len(PromptLibrary)-1 {
 			m.libraryIndex++
 		}
 		m.reviewViewport.SetContent(m.renderLibraryList())
 		return m, nil
-	case "k", "up":
+	case keyScrollUp, keyUp:
 		if m.libraryIndex > 0 {
 			m.libraryIndex--
 		}
@@ -189,7 +189,7 @@ func (m Model) handlePersonaInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	// Index 0 = "(None)", 1 = "(Critical Only)", 2 = "(Terse)", 3..len(Personas)+2 = personas
 	maxIndex := len(Personas) + 2
 	switch msg.String() {
-	case "enter":
+	case keyEnter:
 		m.mode = modeNormal
 		switch m.personaIndex {
 		case 0:
@@ -208,11 +208,11 @@ func (m Model) handlePersonaInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 		m = resetForNewReview(m)
 		return m, tea.Batch(saveCmd, startStreamCmd(m.activeHarness, m.buildFullPrompt(), m.diffContent))
-	case "esc":
+	case keyEsc:
 		m.mode = modeNormal
 		m.reviewViewport.SetContent(m.renderMarkdown(m.reviewContent.String()))
 		return m, nil
-	case "j", "down":
+	case keyScrollDown, keyDown:
 		if m.personaIndex < maxIndex {
 			m.personaIndex++
 		}
@@ -220,7 +220,7 @@ func (m Model) handlePersonaInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.reviewViewport.SetContent(content)
 		scrollPersonaViewport(&m.reviewViewport, sel)
 		return m, nil
-	case "k", "up":
+	case keyScrollUp, keyUp:
 		if m.personaIndex > 0 {
 			m.personaIndex--
 		}
@@ -299,12 +299,12 @@ func scrollPersonaViewport(vp *viewport.Model, selectedLine int) {
 // state, returning to normal mode.
 func (m Model) handleConfirmLargeDiff(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
-	case "enter":
+	case keyEnter:
 		m.pendingDiff = nil
 		m.mode = modeNormal
 		m = resetForNewReview(m)
 		return m, startStreamCmd(m.activeHarness, m.buildFullPrompt(), m.diffContent)
-	case "esc":
+	case keyEsc:
 		m.pendingDiff = nil
 		m.mode = modeNormal
 		m.diffContent = ""
@@ -319,25 +319,47 @@ func (m Model) handleConfirmLargeDiff(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	}
 }
 
+// handleHelpInput processes keyboard input while the help menu is visible. Esc,
+// q, Ctrl-C, Help, Atl-Help F1 or ? closes the overlay and restores the current
+// review content. j/k and up/down are passed through so users can scroll long
+// help pages.
+func (m Model) handleHelpInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case keyEsc, keyQuit, keyHelp, keyHelpAlt, keyCtrlC, keyF1:
+		m.mode = modeNormal
+		m.reviewViewport.SetContent(m.renderMarkdown(m.reviewContent.String()))
+		if m.autoScroll {
+			m.reviewViewport.GotoBottom()
+		}
+		return m, nil
+	case keyScrollDown, keyDown, keyScrollUp, keyUp:
+		var cmd tea.Cmd
+		m.reviewViewport, cmd = m.reviewViewport.Update(msg)
+		return m, cmd
+	default:
+		return m, nil
+	}
+}
+
 // handleHarnessInput processes keyboard input when the TUI is in harness selection mode.
 func (m Model) handleHarnessInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
-	case "enter":
+	case keyEnter:
 		m.activeHarness = m.availableHarnesses[m.harnessIndex].WithModel(m.modelName)
 		m.mode = modeNormal
 		m.reviewViewport.SetContent(m.renderMarkdown(m.reviewContent.String()))
 		return m, saveProfileCmd(m)
-	case "esc":
+	case keyEsc:
 		m.mode = modeNormal
 		m.reviewViewport.SetContent(m.renderMarkdown(m.reviewContent.String()))
 		return m, nil
-	case "j", "down":
+	case keyScrollDown, keyDown:
 		if m.harnessIndex < len(m.availableHarnesses)-1 {
 			m.harnessIndex++
 		}
 		m.reviewViewport.SetContent(m.renderHarnessList())
 		return m, nil
-	case "k", "up":
+	case keyScrollUp, keyUp:
 		if m.harnessIndex > 0 {
 			m.harnessIndex--
 		}
@@ -363,5 +385,67 @@ func (m Model) renderHarnessList() string {
 		}
 		b.WriteString("\n")
 	}
+	return b.String()
+}
+
+// renderHelp builds the full keybinding help text shown in help mode.
+func (m Model) renderHelp() string {
+	var b strings.Builder
+	headerStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(lipgloss.Color("229"))
+	sectionStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(lipgloss.Color("63"))
+	noteStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("240"))
+
+	b.WriteString(headerStyle.Render("Keyboard Shortcuts"))
+	b.WriteString("\n")
+	b.WriteString(noteStyle.Render(fmt.Sprintf("Press [%s], [%s], [%s], %s, or [%s] to close", keyEsc, keyQuit, keyCtrlC, keyHelp, keyF1)))
+	b.WriteString("\n\n")
+
+	b.WriteString(sectionStyle.Render("Normal Mode") + "\n")
+	b.WriteString(fmt.Sprintf("[%s] switch focused pane\n", keyTab))
+	b.WriteString(fmt.Sprintf("[%s/%s/%s/%s] scroll focused pane\n", keyScrollDown, keyScrollUp, keyDown, keyUp))
+	b.WriteString(fmt.Sprintf("[%s] zoom in/out the active pane\n", keyZoom))
+	b.WriteString(fmt.Sprintf("[%s/%s] open this cheat sheet\n", keyHelp, keyF1))
+	b.WriteString(fmt.Sprintf("[%s] / [%s] quit app\n", keyQuit, keyCtrlC))
+	b.WriteString("\n")
+
+	b.WriteString(sectionStyle.Render("Review Actions") + "\n")
+	b.WriteString(fmt.Sprintf("[%s] set a custom prompt\n", keyPrompt))
+	b.WriteString(fmt.Sprintf("[%s] open prompt library\n", keyLibrary))
+	b.WriteString(fmt.Sprintf("[%s] choose review persona\n", keyPersona))
+	b.WriteString(fmt.Sprintf("[%s] cycle review model\n", keyModel))
+	b.WriteString(fmt.Sprintf("[%s] copy focused pane\n", keyCopy))
+	if len(m.availableHarnesses) > 1 {
+		b.WriteString(fmt.Sprintf("[%s] choose review harness\n", keyHarness))
+	}
+	b.WriteString("\n")
+
+	b.WriteString(sectionStyle.Render("Diff Source") + "\n")
+	b.WriteString(fmt.Sprintf("[%s] set an arbitrary git range\n", keyGitRange))
+	b.WriteString(fmt.Sprintf("[%s] open HEAD~n..HEAD picker\n", keyTilde))
+	b.WriteString(fmt.Sprintf("[%s] review last commit\n", keyLastCommit))
+	b.WriteString(fmt.Sprintf("[%s] review staged changes\n", keyStaged))
+	b.WriteString(fmt.Sprintf("[%s] review uncommitted changes\n", keyDirty))
+	b.WriteString(fmt.Sprintf("[%s] review upstream diff\n", keyUpstream))
+	b.WriteString(fmt.Sprintf("[%s] refresh current diff\n", keyRefresh))
+	b.WriteString("\n")
+
+	b.WriteString(sectionStyle.Render("Input Modes") + "\n")
+	b.WriteString(fmt.Sprintf("git range (%s): [%s] fetch | [%s] cancel\n", keyGitRange, keyEnter, keyEsc))
+	b.WriteString(fmt.Sprintf("prompt (%s): [%s] run review | [%s] cancel\n", keyPrompt, keyEnter, keyEsc))
+	b.WriteString(fmt.Sprintf("HEAD~n (%s): [%s] fetch | [%s] cancel\n", keyTilde, keyEnter, keyEsc))
+	b.WriteString(fmt.Sprintf("library/persona/harness: [%s/%s/%s/%s] navigate | [%s] select | [%s] cancel\n", keyScrollDown, keyScrollUp, keyDown, keyUp, keyEnter, keyEsc))
+	b.WriteString(fmt.Sprintf("large diff confirm: [%s] continue | [%s] cancel\n", keyEnter, keyEsc))
+	b.WriteString(fmt.Sprintf("help mode: [%s/%s/%s/%s] scroll | [%s/%s/%s/%s/%s] close\n", keyScrollDown, keyScrollUp, keyDown, keyUp, keyEsc, keyQuit, keyCtrlC, keyHelp, keyF1))
+	b.WriteString("\n")
+
+	b.WriteString(sectionStyle.Render("Notes") + "\n")
+	b.WriteString(noteStyle.Render(fmt.Sprintf("If only one harness is configured, [%s] will not be shown.", keyHarness)))
+	b.WriteString("\n")
+
 	return b.String()
 }
