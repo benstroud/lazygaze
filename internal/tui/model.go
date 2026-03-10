@@ -49,9 +49,10 @@ const (
 	diffSourceStaged
 	diffSourceRoot
 	diffSourceHEAD
+	diffSourceUpstream
 )
 
-const footerHintsBase = "[tab] switch pane | [j/k] scroll | %s | [:] git range | [S] staged | [D] uncommitted | [^] last commit | [~] HEAD~n | [/] prompt | [m] model | [H] harness | [c] copy | [L] library | [P] persona | [r] refresh | [q] quit"
+const footerHintsBase = "[tab] switch pane | [j/k] scroll | %s | [:] git range | [S] staged | [D] dirty | [^] last commit | [U] upstream | [~] HEAD~n | [/] prompt | [m] model | [H] harness | [c] copy | [L] library | [P] persona | [r] refresh | [q] quit"
 
 // Message types with generation tracking for stream messages
 type singleCommitRepoMsg struct{}
@@ -266,6 +267,16 @@ func fetchDiffRootCmd(ctx context.Context, gen int) tea.Cmd {
 			return diffErrMsg{err: err, gen: gen}
 		}
 		return diffFetchedMsg{diffText: diffText, label: "initial commit", gen: gen}
+	}
+}
+
+func fetchDiffUpstreamCmd(ctx context.Context, gen int) tea.Cmd {
+	return func() tea.Msg {
+		diffText, upstream, err := git.DiffUpstream(ctx)
+		if err != nil {
+			return diffErrMsg{err: err, gen: gen}
+		}
+		return diffFetchedMsg{diffText: diffText, label: upstream, gen: gen}
 	}
 }
 

@@ -3,6 +3,7 @@ package tui
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/benstroud/lazygaze/internal/git"
@@ -137,6 +138,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m, ctx = resetForNewStream(m)
 			m.diffSrc = diffSourceRange
 			return m, fetchDiffCmd(ctx, m.gitRange, m.diffFetchGen)
+		case "U":
+			var ctx context.Context
+			m, ctx = resetForNewStream(m)
+			m.diffSrc = diffSourceUpstream
+			return m, fetchDiffUpstreamCmd(ctx, m.diffFetchGen)
 		case "r":
 			if m.diffSrc == diffSourceNone {
 				m.err = fmt.Errorf("nothing to refresh — press : to set a git range first")
@@ -153,6 +159,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, fetchDiffHEADCmd(ctx, m.diffFetchGen)
 			case diffSourceRange:
 				return m, fetchDiffCmd(ctx, m.gitRange, m.diffFetchGen)
+			case diffSourceUpstream:
+				return m, fetchDiffUpstreamCmd(ctx, m.diffFetchGen)
 			}
 			return m, nil
 		case "L":
@@ -222,6 +230,23 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.reviewContent.Reset()
 			m.reviewViewport.SetContent(warningStyle.Render(warning))
 			m.reviewViewport.GotoTop()
+			m.statusMsg = ""
+			return m, nil
+		}
+		// Handle empty upstream diff specially - branches are in sync
+		if m.diffSrc == diffSourceUpstream && strings.TrimSpace(msg.diffText) == "" {
+			m.diffContent = msg.diffText
+			m.diffLabel = msg.label
+			m.diffViewport.SetContent(colorizeDiff(m.diffContent))
+			m.diffViewport.GotoTop()
+			infoMsg := fmt.Sprintf("Your branch is up to date with %s (no changes to review)", msg.label)
+			m.reviewContent.Reset()
+			m.reviewContent.WriteString(infoMsg)
+			m.reviewViewport.SetContent(infoStyle.Render(infoMsg))
+			m.reviewViewport.GotoTop()
+			m.err = nil
+			m.streaming = false
+			m.done = true
 			m.statusMsg = ""
 			return m, nil
 		}

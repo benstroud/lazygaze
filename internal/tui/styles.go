@@ -64,6 +64,11 @@ var (
 			PaddingLeft(1).
 			PaddingTop(1)
 
+	infoStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("39")).
+			PaddingLeft(1).
+			PaddingTop(1)
+
 	personaNameStyle = lipgloss.NewStyle().
 				Foreground(lipgloss.Color("220")).
 				Underline(true)

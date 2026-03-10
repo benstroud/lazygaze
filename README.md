@@ -106,8 +106,9 @@ lazygaze --model opus HEAD~5..HEAD
 | Key | Action |
 |-----|--------|
 | `S` | Review staged changes |
-| `D` | Review uncommitted/dirty changes |
+| `D` | Review dirty changes (uncommitted) |
 | `^` | Review last commit (`HEAD^..HEAD`) |
+| `U` | Review upstream changes (diff against upstream branch) |
 | `~` | Shorthand: enter `n` to review `HEAD~n..HEAD` |
 | `:` | Enter a git range (e.g. `HEAD~3..HEAD`, `main..feature`) |
 | `r` | Refresh / re-run current diff |

@@ -132,3 +132,36 @@ func DiffRoot(ctx context.Context) (string, error) {
 	}
 	return result, nil
 }
+
+// GetUpstreamBranch returns the name of the upstream branch configured for the current HEAD.
+// It uses git's @{upstream} shorthand to resolve the configured upstream branch.
+// Returns an error if no upstream is configured or if the git command fails.
+func GetUpstreamBranch(ctx context.Context) (string, error) {
+	result, err := runGitCmd(ctx, "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{upstream}")
+	if err != nil {
+		// Only translate the specific "no upstream" error to a helpful message
+		if strings.Contains(err.Error(), "fatal: no upstream configured") ||
+			strings.Contains(err.Error(), "does not have any upstream") {
+			return "", fmt.Errorf("no upstream branch configured — set with `git branch --set-upstream-to <remote>/<branch>`")
+		}
+		return "", err
+	}
+	return strings.TrimSpace(result), nil
+}
+
+// DiffUpstream returns the diff between the current branch and its configured upstream branch.
+// It returns the diff text, the upstream branch name, and any error encountered.
+// Returns an error if no upstream is configured or if the git command fails.
+// Returns an empty diff (but no error) when the branches are in sync.
+func DiffUpstream(ctx context.Context) (string, string, error) {
+	upstream, err := GetUpstreamBranch(ctx)
+	if err != nil {
+		return "", "", err
+	}
+	rangeSpec := upstream + "..HEAD"
+	result, err := runGitCmd(ctx, "diff", rangeSpec)
+	if err != nil {
+		return "", "", err
+	}
+	return result, upstream, nil
+}
