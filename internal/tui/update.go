@@ -187,7 +187,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case keyPersona:
 			m.mode = modePersona
 			m.personaIndex = 0
-			content, _ := m.renderPersonaList()
+			content, _, _ := m.renderPersonaList()
 			m.reviewViewport.SetContent(content)
 			m.reviewViewport.GotoTop()
 			return m, nil
