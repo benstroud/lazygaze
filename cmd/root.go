@@ -137,10 +137,10 @@ func run(cmd *cobra.Command, args []string) error {
 
 	sys := claude.DefaultSystemPrompt
 	if persona != nil {
-		if persona.Anonymous {
-			sys += fmt.Sprintf("\n%s", persona.Description)
-		} else {
+		if persona.InspiredBy != "" {
 			sys += fmt.Sprintf("\nAdopt the voice, opinions, and reviewing style of %s. %s. Review as they would — with their known priorities, pet peeves, and communication style.", persona.Name, persona.Description)
+		} else {
+			sys += fmt.Sprintf("\n%s%s", persona.Description, tui.InspirationSuffix(persona))
 		}
 	}
 	fullPrompt := claude.BuildPrompt(sys, prompt)

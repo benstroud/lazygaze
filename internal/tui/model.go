@@ -313,10 +313,10 @@ func fetchDiffUpstreamCmd(ctx context.Context, gen int) tea.Cmd {
 func (m Model) buildFullPrompt() string {
 	sys := claude.DefaultSystemPrompt
 	if m.persona != nil && !m.promptNoPersona {
-		if m.persona.Anonymous {
-			sys += fmt.Sprintf("\n%s", m.persona.Description)
-		} else {
+		if m.persona.InspiredBy != "" {
 			sys += fmt.Sprintf("\nAdopt the voice, opinions, and reviewing style of %s. %s. Review as they would — with their known priorities, pet peeves, and communication style.", m.persona.Name, m.persona.Description)
+		} else {
+			sys += fmt.Sprintf("\n%s%s", m.persona.Description, InspirationSuffix(m.persona))
 		}
 	}
 	return claude.BuildPrompt(sys, m.prompt)

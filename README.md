@@ -154,7 +154,7 @@ Press `P` to browse 53 reviewer archetypes organized into 6 categories:
 - **Educators & Evangelists** — pedagogy, documentation, knowledge transfer
 - **Influencers** — modern open-source voices and engineering culture
 
-Special modes: **(Critical Only)** suppresses style feedback and reports only bugs, security issues, and data loss risks. **(Terse)** returns bullet points only.
+Special modes: **(Critical Issues Only)** suppresses style feedback and reports only bugs, security issues, and data loss risks. **(Terse)** returns bullet points only.
 
 ---
 
@@ -169,6 +169,15 @@ make clean    # remove binary
 ---
 
 ## Links
+
+### lazygit, lazydocker
+
+I took inspiration for this project idea and its name "lazygaze" from the open
+source TUI projects [lazygit](https://github.com/jesseduffield/lazygit) and
+[lazydocker](https://github.com/jesseduffield/lazydocker), both created by [Jesse
+Duffied](https://github.com/sponsors/jesseduffield).
+
+### diffreview
 
 Also see my Zsh LLM code review helper snippets that were a precursor to this
 project. Example:

@@ -9,6 +9,7 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/muesli/reflow/wordwrap"
 )
 
 // handleGitRangeInput processes keyboard input when the TUI is in git range input mode.
@@ -178,16 +179,19 @@ func (m Model) renderLibraryList() string {
 	return b.String()
 }
 
-// handlePersonaInput processes keyboard input when the TUI is in persona selection mode.
-// It enables navigation through a list of available review personas using arrow keys
-// (j/k or up/down) and selection via Enter. The function handles three built-in options:
-// "(None)" (no persona), "(Critical Only)" (critical issues only), and "(Terse)" (brief output),
-// as well as any custom personas. When a persona is selected, it updates the model's persona
-// field and either displays existing review content or initiates a new review stream if diff
-// content is present. Pressing Escape cancels persona selection and returns to normal mode.
+// handlePersonaInput processes keyboard input when the TUI is in persona
+// selection mode. It enables navigation through a list of available review
+// personas using arrow keys (j/k or up/down) and selection via Enter. The
+// function handles three built-in options: "(None)" (no persona), "(Critical
+// Issues Only)" (critical issues only), and "(Terse)" (brief output), as well
+// as any custom personas. When a persona is selected, it updates the model's
+// persona field and either displays existing review content or initiates a new
+// review stream if diff content is present. Pressing Escape cancels persona
+// selection and returns to normal mode.
 func (m Model) handlePersonaInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	// Index 0 = "(None)", 1 = "(Critical Only)", 2 = "(Terse)", 3..len(Personas)+2 = personas
-	maxIndex := len(Personas) + 2
+	personas := SortedPersonasByCategory()
+	// Index 0 = "(None)", 1 = "(Critical Issues Only)", 2 = "(Terse)", 3..len(Personas)+2 = personas
+	maxIndex := len(personas) + 2
 	switch msg.String() {
 	case keyEnter:
 		m.mode = modeNormal
@@ -195,11 +199,11 @@ func (m Model) handlePersonaInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		case 0:
 			m.persona = nil
 		case 1:
-			m.persona = &Persona{Name: "(Critical Only)", Description: "Only report critical issues — bugs, security vulnerabilities, data loss risks, and correctness problems. Skip style, naming, and minor suggestions."}
+			m.persona = &Persona{Name: "(Critical Issues Only)", Description: "Only report critical issues — bugs, security vulnerabilities, data loss risks, and correctness problems. Skip style, naming, and minor suggestions."}
 		case 2:
 			m.persona = &Persona{Name: "(Terse)", Description: "Extremely brief and concise, bullet points only, no fluff"}
 		default:
-			m.persona = &Personas[m.personaIndex-3]
+			m.persona = &personas[m.personaIndex-3]
 		}
 		saveCmd := saveProfileCmd(m)
 		if m.diffContent == "" {
@@ -216,17 +220,17 @@ func (m Model) handlePersonaInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if m.personaIndex < maxIndex {
 			m.personaIndex++
 		}
-		content, sel := m.renderPersonaList()
+		content, sel, extra := m.renderPersonaList()
 		m.reviewViewport.SetContent(content)
-		scrollPersonaViewport(&m.reviewViewport, sel)
+		scrollPersonaViewport(&m.reviewViewport, sel, extra)
 		return m, nil
 	case keyScrollUp, keyUp:
 		if m.personaIndex > 0 {
 			m.personaIndex--
 		}
-		content, sel := m.renderPersonaList()
+		content, sel, extra := m.renderPersonaList()
 		m.reviewViewport.SetContent(content)
-		scrollPersonaViewport(&m.reviewViewport, sel)
+		scrollPersonaViewport(&m.reviewViewport, sel, extra)
 		return m, nil
 	default:
 		return m, nil
@@ -234,12 +238,12 @@ func (m Model) handlePersonaInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 // renderPersonaList renders the persona selection list view for the TUI.
-// It displays special filter options ("None", "Critical Only", "Terse") at the top,
+// It displays special filter options ("None", "Critical Issues Only", "Terse") at the top,
 // followed by all available personas with their names and descriptions.
 // The currently selected item is highlighted using the selected style.
 // Navigation hints are shown at the top of the list.
 // Returns the rendered string and the line number of the selected item.
-func (m Model) renderPersonaList() (string, int) {
+func (m Model) renderPersonaList() (string, int, int) {
 	var b strings.Builder
 	lineCount := 0
 	selectedLine := 0
@@ -254,7 +258,7 @@ func (m Model) renderPersonaList() (string, int) {
 
 	// Special options at the top
 	write(libraryCategoryStyle.Render("Filters") + "\n")
-	specialOptions := []string{"(None)", "(Critical Only)", "(Terse)"}
+	specialOptions := []string{"(None)", "(Critical Issues Only)", "(Terse)"}
 	for i, label := range specialOptions {
 		if i == m.personaIndex {
 			selectedLine = lineCount
@@ -265,31 +269,47 @@ func (m Model) renderPersonaList() (string, int) {
 	}
 
 	offset := len(specialOptions)
-	for _, cat := range PersonaCategories {
+
+	// Leave room for the "> " prefix and some right margin.
+	wrapWidth := m.reviewViewport.Width - 4
+	if wrapWidth < 20 {
+		wrapWidth = 20
+	}
+
+	selectedExtraLines := 0
+
+	for _, cat := range SortedCategories() {
 		write(libraryCategoryStyle.Render(cat) + "\n")
-		for i, p := range Personas {
+
+		for i, p := range SortedPersonasByCategory() {
 			if p.Category != cat {
 				continue
 			}
-			label := fmt.Sprintf("%s — %s", p.Name, p.Description)
+			nameLine := fmt.Sprintf("%s — inspired by %s", p.Name, p.InspiredBy)
+			desc := wordwrap.String(p.Description, wrapWidth)
+
 			if i+offset == m.personaIndex {
 				selectedLine = lineCount
-				write(librarySelectedStyle.Render("> "+label) + "\n")
+				selectedExtraLines = strings.Count(desc, "\n") + 1 // desc lines + blank line
+				label := nameLine + "\n" + desc
+				write(librarySelectedStyle.Render("> "+label) + "\n\n")
 			} else {
+				label := nameLine
 				write(libraryItemStyle.Render("  "+label) + "\n")
 			}
 		}
 	}
 
-	return b.String(), selectedLine
+	return b.String(), selectedLine, selectedExtraLines
 }
 
-// scrollPersonaViewport adjusts vp's YOffset so that selectedLine is visible.
-func scrollPersonaViewport(vp *viewport.Model, selectedLine int) {
+// scrollPersonaViewport adjusts vp's YOffset so that selectedLine is visible,
+// accounting for extraLines of content below the selected line (e.g. wrapped descriptions).
+func scrollPersonaViewport(vp *viewport.Model, selectedLine, extraLines int) {
 	if selectedLine < vp.YOffset {
 		vp.SetYOffset(selectedLine)
-	} else if selectedLine >= vp.YOffset+vp.Height {
-		vp.SetYOffset(selectedLine - vp.Height + 1)
+	} else if selectedLine+extraLines >= vp.YOffset+vp.Height {
+		vp.SetYOffset(selectedLine + extraLines - vp.Height + 1)
 	}
 }
 
