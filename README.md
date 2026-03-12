@@ -6,7 +6,12 @@ The `lazygaze` TUI pipes git diffs to Claude CLI or Github Copilot CLI with
 streaming output, prompt library, and persona system. Diff on the left. Analysis
 on the right. No browser, reduced context switching. Fast workflow.
 
-[![Go](https://github.com/benstroud/lazygaze/actions/workflows/go.yml/badge.svg)](https://github.com/benstroud/lazygaze/actions/workflows/go.yml) [![Built with bubbletea](https://img.shields.io/badge/built%20with-bubbletea-ff69b4)](https://github.com/charmbracelet/bubbletea) [![Powered by Claude](https://img.shields.io/badge/powered%20by-Claude-orange)](https://www.anthropic.com) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+[![Go](https://github.com/benstroud/lazygaze/actions/workflows/go.yml/badge.svg)](https://github.com/benstroud/lazygaze/actions/workflows/go.yml)
+[![Built with bubbletea](https://img.shields.io/badge/built%20with-bubbletea-ff69b4)](https://github.com/charmbracelet/bubbletea)
+[![Works with: Claude Code](https://img.shields.io/badge/Works%20with-Claude%20Code-blueviolet)](https://code.claude.com)
+[![Works with: GitHub Copilot](https://img.shields.io/badge/Works%20with-GitHub%20Copilot-black)](https://github.com/features/copilot/cli)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+[![BuyMeACoffee](https://raw.githubusercontent.com/pachadotdev/buymeacoffee-badges/main/bmc-donate-yellow.svg)](https://www.buymeacoffee.com/benstroud)
 
 This software is licensed under the MIT [LICENSE](./LICENSE)
 
@@ -111,7 +116,7 @@ lazygaze --model opus HEAD~5..HEAD
 | `^` | Review last commit (`HEAD^..HEAD`) |
 | `U` | Review upstream changes (diff against upstream branch) |
 | `~` | Shorthand: enter `n` to review `HEAD~n..HEAD` |
-| `:` | Enter a git range (e.g. `HEAD~3..HEAD`, `main..feature`) |
+| `:` | Enter a git range (e.g. `HEAD~3..HEAD`, `main..feature`, `origin/master..HEAD`) |
 | `r` | Refresh / re-run current diff |
 
 ### Review
