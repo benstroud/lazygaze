@@ -34,8 +34,9 @@ This software is licensed under the MIT [LICENSE](./LICENSE)
 | Feature | Description |
 |---|---|
 | **Split-pane TUI** | Syntax-highlighted diff left, streaming markdown review right |
-| **Prompt library** | 26 curated prompts across architecture, security, performance, testing, and workflow |
-| **Personas** | 53 reviewer archetypes across 6 categories; living people represented by descriptive titles |
+| **Prompt library** | Extensive library of curated prompts across architecture, security, performance, testing, and workflow |
+| **Personas** | 50+ categorized reviewer archetypes inspired by legendary figures |
+| **Coding agent selection** | Use either `claude` or `copilot` |
 | **Model cycling** | Switch between Sonnet, Opus, and Haiku on the fly |
 | **Multiple diff sources** | Git ranges, staged changes, initial commit |
 | **Clipboard** | Copy diff or review to clipboard with a single key |
@@ -52,7 +53,15 @@ This software is licensed under the MIT [LICENSE](./LICENSE)
 
 ### To run
 
-- `lazygaze` delegates to [Git](https://git-scm.com/) and [Claude CLI](https://github.com/anthropics/claude-code). It expects to find `git` and `claude` shell commands in your `PATH`. Ensure Claude is installed properly, authenticated (`claude --version`), and has credits/subscription.
+At runtime, `lazygaze` delegates to [Git](https://git-scm.com/) and [Claude
+CLI](https://github.com/anthropics/claude-code) running locally. It expects to
+find `git` and `claude` shell commands in your `PATH`. Ensure Claude is
+installed properly, authenticated (`claude --version`), and has
+credits/subscription.
+
+[GitHub Copilot CLI](https://github.com/features/copilot/cli) is also supported
+as an option instead of Claude Code. Ensure it is installed properly,
+authenticated (`copilot --version`), and has credits/subscription.
 
 ---
 
@@ -77,21 +86,32 @@ sudo mv lazygaze /usr/local/bin/   # or add to your PATH
 
 ## Usage
 
-```bash
-# Launch TUI — enter a git range interactively
-lazygaze
+The primary mode of operation is the TUI, where you can enter a git range and
+other options interactively:
 
+```bash
+lazygaze
+```
+
+Typically, you'll set options interactively once the TUI is launched, but you
+can also initialize options when launching by using flags:
+
+```bash
 # Diff expression set at launch instead of interactively (Review the last 3 commits)
 lazygaze HEAD~3..HEAD
 
 # Prompt set a launch instead of interactively
 lazygaze HEAD~1..HEAD "Focus on security vulnerabilities"
 
-# Headless non-interactive output (pipes to stdout)
-lazygaze --cli HEAD~1..HEAD
-
 # Specify a model at launch instead of interactively
 lazygaze --model opus HEAD~5..HEAD
+```
+
+It is also possible to run non-interactively by using the `--cli` flag:
+
+```bash
+# Headless non-interactive output (pipes to stdout)
+lazygaze --cli HEAD~1..HEAD
 ```
 
 ---
@@ -134,7 +154,7 @@ lazygaze --model opus HEAD~5..HEAD
 
 ## Prompt Library
 
-Press `L` to browse 26 built-in prompts organized by category:
+Press `L` to browse built-in prompts organized by category:
 
 - **Architecture** — layering violations, structural improvements
 - **Bug Detection** — nil dereferences, race conditions, off-by-ones
@@ -150,14 +170,14 @@ Press `L` to browse 26 built-in prompts organized by category:
 
 ## Personas
 
-Press `P` to browse 53 reviewer archetypes organized into 6 categories:
+Press `P` to browse reviewer archetypes organized into categories:
 
 - **CS Foundations** — structured programming, algorithmic rigor, formal correctness
 - **Legendary Creators** — language designers, OS authors, paradigm inventors
 - **Clean Code & Design** — readability, SOLID principles, refactoring
 - **Systems & Performance** — low-level optimization, real-time constraints
 - **Educators & Evangelists** — pedagogy, documentation, knowledge transfer
-- **Influencers** — modern open-source voices and engineering culture
+- **Influencers** — popular online voices and engineering culture
 
 Special modes: **(Critical Issues Only)** suppresses style feedback and reports only bugs, security issues, and data loss risks. **(Terse)** returns bullet points only.
 
